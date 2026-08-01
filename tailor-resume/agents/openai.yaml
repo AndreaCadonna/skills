@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tailor Resume"
+  short_description: "Tailor resumes with Resumake v2 templates"
+  default_prompt: "Use $tailor-resume to tailor my resume to this job description and render the final PDF."

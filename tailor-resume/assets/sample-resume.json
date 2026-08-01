@@ -1,0 +1,91 @@
+{
+  "selectedTemplate": 1,
+  "headings": {
+    "summary": "Profile",
+    "work": "Work Experience",
+    "skills": "Skills",
+    "education": "Education",
+    "projects": "Projects"
+  },
+  "sections": [
+    "profile",
+    "summary",
+    "work",
+    "skills",
+    "education",
+    "projects"
+  ],
+  "basics": {
+    "name": "Alex Example",
+    "email": "alex.johnson@example.com",
+    "phone": "+44 1632 960000",
+    "website": "https://alex.example",
+    "location": {
+      "address": "Example City, UK"
+    },
+    "profiles": [
+      {
+        "label": "LinkedIn",
+        "url": "https://social.example/alex"
+      }
+    ]
+  },
+  "summary": "Full Stack Developer with five years of experience building reliable web applications. Demonstrated cross-functional collaboration and analytical problem solving across product delivery.",
+  "work": [
+    {
+      "company": "Example Systems Ltd",
+      "position": "Full Stack Developer",
+      "location": "London, UK",
+      "startDate": "2021",
+      "endDate": "Present",
+      "highlights": [
+        "Built TypeScript services and React interfaces for internal operations workflows.",
+        "Led cross-functional collaboration with product and design teams to improve release quality.",
+        "Reduced median page-load time by 32% using measurements recorded in the project performance report."
+      ]
+    },
+    {
+      "company": "Sample Software",
+      "position": "Junior Software Developer",
+      "location": "Remote",
+      "startDate": "2019",
+      "endDate": "2021",
+      "highlights": [
+        "Delivered tested Node.js API features for customer account management.",
+        "Maintained PostgreSQL queries and documented production support procedures."
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "Languages",
+      "keywords": ["TypeScript", "JavaScript", "SQL"]
+    },
+    {
+      "name": "Web",
+      "keywords": ["React", "Node.js", "REST APIs"]
+    },
+    {
+      "name": "Data",
+      "keywords": ["PostgreSQL", "Performance profiling"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Example University",
+      "location": "London, UK",
+      "studyType": "BSc",
+      "area": "Computer Science",
+      "startDate": "2016",
+      "endDate": "2019"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Resume Automation",
+      "description": "Generated structured, tailored resumes and rendered them locally as LaTeX PDFs.",
+      "url": "https://code.example/alex/resume-automation",
+      "keywords": ["Node.js", "LaTeX", "JSON"]
+    }
+  ]
+}
