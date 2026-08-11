@@ -1,5 +1,13 @@
 {
   "selectedTemplate": 1,
+  "strategy": {
+    "careerStage": "mid",
+    "outputMode": "application",
+    "targetRole": "Full Stack Software Engineer",
+    "roleFamily": "full-stack",
+    "locale": "United Kingdom",
+    "pageTarget": 1
+  },
   "headings": {
     "summary": "Profile",
     "work": "Work Experience",
@@ -10,13 +18,14 @@
   "sections": [
     "profile",
     "summary",
-    "work",
     "skills",
-    "education",
-    "projects"
+    "work",
+    "projects",
+    "education"
   ],
   "basics": {
     "name": "Alex Example",
+    "headline": "Full Stack Software Engineer | TypeScript, React, and Node.js",
     "email": "alex.johnson@example.com",
     "phone": "+44 1632 960000",
     "website": "https://alex.example",
@@ -39,7 +48,7 @@
       "startDate": "2021",
       "endDate": "Present",
       "highlights": [
-        "Built TypeScript services and React interfaces for internal operations workflows.",
+        "Built TypeScript services and React interfaces used across three internal operations teams, replacing recurring spreadsheet workflows.",
         "Led cross-functional collaboration with product and design teams to improve release quality.",
         "Reduced median page-load time by 32% using measurements recorded in the project performance report."
       ]
@@ -83,7 +92,10 @@
   "projects": [
     {
       "name": "Resume Automation",
-      "description": "Generated structured, tailored resumes and rendered them locally as LaTeX PDFs.",
+      "description": "Created a local workflow for generating structured, job-specific resumes.",
+      "highlights": [
+        "Validated JSON inputs and rendered selectable-text LaTeX PDFs without sending candidate data to a hosted renderer."
+      ],
       "url": "https://code.example/alex/resume-automation",
       "keywords": ["Node.js", "LaTeX", "JSON"]
     }

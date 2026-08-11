@@ -88,7 +88,52 @@ function escapeTree(value) {
   return value;
 }
 
-function toResumakeValues(input) {
+export function injectHeadline(tex, template, headline) {
+  if (!headline) return tex;
+  const centered = `\\begin{center}\n{\\small\\textit{${headline}}}\n\\end{center}`;
+  const insert = (pattern, replacement) => {
+    const updated = tex.replace(pattern, replacement);
+    if (updated === tex) throw new Error(`Could not place headline in Resumake template ${template}.`);
+    return updated;
+  };
+
+  switch (template) {
+    case 1:
+      return insert(
+        /(\{\\Huge \\scshape[^\n]*\})(?:\\\\)?\s*\n/,
+        `$1\\\\\n        {\\large\\itshape ${headline}}\\\\\n`,
+      );
+    case 2:
+      return insert(
+        /(\\headerfirstnamestyle[^\n]*\\\\\s*\n)/,
+        `$1      {\\small\\textit{${headline}}} \\\\\n`,
+      );
+    case 3:
+      return insert(
+        /(\\textbf\{\\Large[^\n]*)(\n\s*\\end\{tabular\*\})/,
+        `$1 \\\\\n\\multicolumn{2}{c}{\\textit{${headline}}}$2`,
+      );
+    case 4:
+      return insert(/(\\namesection[^\n]*\n)/, `$1${centered}\n`);
+    case 5:
+      return insert(/(\\begin\{resume\}\s*\n)/, `$1${centered}\n`);
+    case 6:
+      return insert(
+        /(\{\\fontsize\{\\sizeone\}[^\n]*\n)/,
+        `$1      {\\small\\textit{${headline}}}\\\\\n`,
+      );
+    case 7:
+      return insert(/(\\begin\{document\})/, `\\title{${headline}}\n$1`);
+    case 8:
+      return insert(/(\\makeheader\s*\n)/, `$1${centered}\n`);
+    case 9:
+      return insert(/(\\MyName\{[^\n]*\}\s*\n)/, `$1${centered}\n`);
+    default:
+      return tex;
+  }
+}
+
+export function toResumakeValues(input) {
   const normalized = normalizeResume(input);
   const websites = normalized.basics.website.split(/\s+/).filter(Boolean);
   const primaryWebsite = websites[0] || normalized.basics.profiles.find((profile) => profile.url)?.url || "";
@@ -98,9 +143,10 @@ function toResumakeValues(input) {
     if (!sections.includes(upstreamSection)) sections.push(upstreamSection);
   }
 
-  const awards = [...normalized.awards];
-  if (normalized.summary) awards.unshift({ summary: normalized.summary });
   const includesSummary = normalized.sections.includes("summary");
+  const includesAwards = normalized.sections.includes("awards");
+  const awards = includesAwards ? [...normalized.awards] : [];
+  if (includesSummary && normalized.summary) awards.unshift({ summary: normalized.summary });
   const headings = {
     ...normalized.headings,
     awards: includesSummary
@@ -115,10 +161,14 @@ function toResumakeValues(input) {
     sections,
     awards,
     work: normalized.work.map((job) => ({ ...job, name: job.company })),
+    projects: normalized.projects.map((project) => ({
+      ...project,
+      description: [project.description, ...project.highlights].filter(Boolean).join(" "),
+    })),
   });
 }
 
-async function loadGenerator(template) {
+export async function loadGenerator(template) {
   const sourcePath = path.join(VENDOR_DIR, "generators", `template${template}.ts`);
   let code = await fs.readFile(sourcePath, "utf8");
   code = code
@@ -216,7 +266,12 @@ async function main() {
   const template = report.normalized.selectedTemplate;
   const engine = TEMPLATE_ENGINES[template];
   const generator = await loadGenerator(template);
-  const tex = generator(toResumakeValues(report.normalized));
+  const values = toResumakeValues(report.normalized);
+  const tex = injectHeadline(
+    generator(values),
+    template,
+    values.basics.headline,
+  );
   const bundleDir = await prepareBundle(opts.outputDir, safeBasename(opts.basename), opts.overwrite);
 
   await copyTemplateAssets(template, bundleDir);

@@ -1,4 +1,4 @@
 interface:
   display_name: "Tailor Resume"
-  short_description: "Tailor resumes with Resumake v2 templates"
-  default_prompt: "Use $tailor-resume to tailor my resume to this job description and render the final PDF."
+  short_description: "Tailor and audit evidence-backed SWE resumes"
+  default_prompt: "Use $tailor-resume to tailor and evidence-audit my SWE resume for this job description, then render an ATS application PDF."

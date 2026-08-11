@@ -42,9 +42,22 @@ python <skill-directory>/scripts/render_resume.py --input <resume.json> --output
 
 This creates a ReportLab PDF and normalized JSON. It supports template 1 data only, but its design is not the upstream Resumake template 1.
 
+The generic fallback is not ATS-verified. Inspect its extracted reading order explicitly because it uses layout tables for aligned dates and locations.
+
 ## Verify
 
-Render every generated PDF page to PNG and inspect it. Check clipping, wrapping, whitespace, glyphs, links, and page count. Then extract text as a secondary completeness check. A successful TeX exit is not visual verification.
+Render every generated PDF page to PNG and inspect it. Check clipping, wrapping, hierarchy, whitespace, glyphs, links, and whether every page contains meaningful evidence. A successful TeX exit is not visual verification.
+
+For an ATS application copy, also:
+
+1. confirm PDF text is selectable;
+2. extract all text and inspect logical reading order, not only completeness;
+3. confirm the name, headline, contact details, and conventional section labels survive extraction;
+4. check dates remain attached to the correct roles and schools;
+5. perform a rapid top-third scan for target role, current level, relevant stack, strongest impact, and scale;
+6. use the shortest page count that preserves relevant evidence without shrinking typography.
+
+Templates other than template 1 are not ATS-verified. A visually correct PDF from one of those templates still requires an explicit parsing-risk warning and careful extraction review.
 
 ## Provenance
 

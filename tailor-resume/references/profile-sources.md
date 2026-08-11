@@ -22,6 +22,8 @@ When the documents contain overlapping facts, prefer the source the user marks a
 
 For repeated use, recommend exporting the cleaned inventory to a private, versioned JSON or YAML file. Google can remain the authoring source while the structured export reduces retrieval and interpretation time.
 
+Treat this inventory as a master evidence resume, not as the document submitted to employers. Capture every defensible achievement, metric, scope proxy, project, technology, leadership example, publication, and certification, then select only relevant evidence for each application.
+
 ## Inventory shape
 
 Use stable IDs for factual units:
@@ -38,7 +40,11 @@ Use stable IDs for factual units:
       "id": "work-company-performance",
       "statement": "Source-backed achievement",
       "technologies": ["Angular", "RxJS"],
-      "metrics": [],
+      "metrics": [{
+        "value": "32%",
+        "kind": "measured",
+        "description": "Median page-load reduction"
+      }],
       "source": "doc:Experience KB#Company"
     }]
   }]
@@ -50,4 +56,3 @@ IDs exist for traceability; they do not appear in the final resume.
 ## Privacy boundary
 
 Keep personal candidate data outside a distributable skill package. Store it in a user-controlled local path or retrieve it through an authorized connector. Send it to a remote renderer only after the user has knowingly selected that renderer. The bundled renderer operates locally.
-

@@ -77,10 +77,16 @@ def normalize(data: dict) -> dict:
     )
     return {
         'selectedTemplate': data.get('selectedTemplate', 1),
+        'strategy': (
+            data.get('strategy')
+            if isinstance(data.get('strategy'), dict)
+            else {}
+        ),
         'headings': {**DEFAULT_HEADINGS, **headings},
         'sections': list(data.get('sections', DEFAULT_SECTIONS)),
         'basics': {
             'name': clean(basics.get('name')),
+            'headline': clean(basics.get('headline')),
             'email': clean(basics.get('email')),
             'phone': clean(basics.get('phone')),
             'website': clean(basics.get('website')),
@@ -126,6 +132,9 @@ def normalize(data: dict) -> dict:
             {
                 'name': clean(row.get('name')),
                 'description': clean(row.get('description')),
+                'highlights': [
+                    clean(x) for x in items(row.get('highlights')) if clean(x)
+                ],
                 'url': clean(row.get('url')),
                 'keywords': [clean(x) for x in items(row.get('keywords')) if clean(x)],
             }
@@ -157,8 +166,12 @@ def validate(resume: dict) -> None:
         if not row['institution']:
             errors.append(f'education[{index}] requires institution')
     for index, project in enumerate(resume['projects']):
-        if not project['name'] or not project['description']:
-            errors.append(f'projects[{index}] requires name and description')
+        if not project['name'] or not (
+            project['description'] or project['highlights']
+        ):
+            errors.append(
+                f'projects[{index}] requires name and description or highlights'
+            )
     if errors:
         raise ValueError('; '.join(errors))
 
@@ -193,6 +206,10 @@ def styles():
         'contact': ParagraphStyle(
             'Contact', parent=sheet['Normal'], fontName='Helvetica',
             fontSize=7.8, leading=9.2, alignment=TA_CENTER, spaceAfter=4,
+        ),
+        'headline': ParagraphStyle(
+            'Headline', parent=sheet['Normal'], fontName='Helvetica-Oblique',
+            fontSize=10.2, leading=12, alignment=TA_CENTER, spaceAfter=2,
         ),
         'section': ParagraphStyle(
             'Section', parent=sheet['Normal'], fontName='Helvetica-Bold',
@@ -276,8 +293,10 @@ def build_pdf(resume: dict, target: Path) -> None:
                     contacts.append(link(profile['label'] or profile['url'], profile['url']))
             story.extend([
                 Paragraph(markup(basics['name']), style['name']),
-                Paragraph(' | '.join(contacts), style['contact']),
             ])
+            if basics['headline']:
+                story.append(Paragraph(markup(basics['headline']), style['headline']))
+            story.append(Paragraph(' | '.join(contacts), style['contact']))
 
         elif name == 'summary' and resume['summary']:
             story.extend(section(resume['headings']['summary'], style))
@@ -334,7 +353,10 @@ def build_pdf(resume: dict, target: Path) -> None:
                     project_label or 'Project link', project['url']
                 ) if project['url'] else ''
                 story.append(two_column(project_name, project_link, style))
-                story.append(Paragraph(markup(project['description']), style['body']))
+                if project['description']:
+                    story.append(Paragraph(markup(project['description']), style['body']))
+                for bullet in project['highlights']:
+                    story.append(Paragraph('&bull; ' + markup(bullet), style['bullet']))
                 story.append(Spacer(1, 1.5))
 
     doc.build(story)

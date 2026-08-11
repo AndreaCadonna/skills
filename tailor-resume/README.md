@@ -1,6 +1,6 @@
 # Tailor Resume
 
-`tailor-resume` is a local Codex skill for creating truthful, job-specific resumes from a candidate knowledge base. It matches a job description to supported experience, produces validated resume JSON, and renders TeX or PDF with the original Resumake v2 LaTeX templates.
+`tailor-resume` is a local Codex skill for creating truthful, job-specific software-engineering resumes from a candidate knowledge base. It models career stage and role requirements, maps claims to evidence, produces validated resume JSON, and renders TeX or PDF with the original Resumake v2 LaTeX templates.
 
 The primary workflow runs locally. It does not send resume data to a hosted Resumake endpoint.
 
@@ -8,7 +8,9 @@ The primary workflow runs locally. It does not send resume data to a hosted Resu
 
 - Tailors resume content to a supplied job description without inventing facts.
 - Records evidence and gaps before drafting claims.
-- Validates the structured resume before rendering.
+- Applies career-stage section, summary, bullet, and page strategies.
+- Separates structured validation from a private source-evidence audit.
+- Checks ATS template choice, terminology, chronology, bullet quality, and skills-in-context signals.
 - Supports all nine original Resumake v2 LaTeX templates.
 - Produces a PDF when the required TeX engine is installed, or a self-contained TeX source bundle otherwise.
 - Keeps personal source documents outside the published skill package.
@@ -43,9 +45,11 @@ Use $tailor-resume for this role with template 4. Generate the TeX bundle only.
 
 The model should treat your supplied resume, documents, sheets, and explicit corrections as the only factual sources. See [SKILL.md](SKILL.md) for the complete agent workflow and safeguards.
 
+The renderer JSON supports non-rendered `strategy` metadata, a rendered `basics.headline`, and project `highlights[]`. See [references/resume-schema.md](references/resume-schema.md).
+
 ## Templates
 
-Templates are selected with a number from `1` to `9`. Template 1 is the default.
+Templates are selected with a number from `1` to `9`. Template 1 is the ATS application default. Other templates are available for explicit preference or portfolio copies but require careful extraction-order review.
 
 | ID | Style | TeX engine |
 | --- | --- | --- |
@@ -89,6 +93,18 @@ Generate a TeX bundle without compiling a PDF:
 node scripts/render_resumake.mjs --input path/to/resume.json --output-dir output --basename tailored-resume --template 4 --tex-only
 ```
 
+Audit claim and requirement evidence with a private sidecar:
+
+```shell
+node scripts/audit_application.mjs path/to/resume.json path/to/application-audit.json
+```
+
+Run the regression suite:
+
+```shell
+node scripts/test_resume.mjs
+```
+
 Use `--overwrite` only when you intentionally want to replace an existing output. The renderer writes a manifest and copies the required template files, fonts, and license notices into the generated source bundle.
 
 The expected JSON shape is documented in [references/resume-schema.md](references/resume-schema.md), with synthetic data in [assets/sample-resume.json](assets/sample-resume.json).
@@ -109,7 +125,7 @@ The skill's original code and documentation are provided under the [MIT License]
 | --- | --- |
 | `SKILL.md` | Agent instructions and end-to-end workflow |
 | `agents/` | Skill metadata used by Codex |
-| `scripts/` | Validation and rendering commands |
+| `scripts/` | Schema validation, evidence auditing, regression tests, and rendering commands |
 | `references/` | Schema, policy, source, renderer, and template guidance |
 | `assets/` | Synthetic example plus vendored Resumake v2 runtime assets |
 | `LICENSE` and `NOTICE` | Project and third-party licensing information |

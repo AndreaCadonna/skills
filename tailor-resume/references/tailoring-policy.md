@@ -1,97 +1,126 @@
 # Tailoring policy
 
-Use this policy as the single source of truth for resume content decisions.
+Use this policy as the source of truth for software-engineering resume content decisions.
 
-## Truth ledger
+## Truth and metric ledger
 
-Classify each candidate fact before drafting:
+Classify candidate facts before drafting:
 
-- **Immutable:** employer, historical title, dates, degree, institution, project identity, technology actually used, measured result.
+- **Immutable:** employer, historical title, dates, degree, institution, project identity, technology used, ownership level, and measured result.
 - **Reframmable:** emphasis, ordering, action verb, concise wording, and supported transferable capability.
-- **Target-facing:** resume headline, summary, skills ordering, and section selection.
+- **Target-facing:** headline, conditional summary, skills ordering, section selection, and employer terminology.
 - **Gap:** an unsupported requirement that stays out of experience claims.
 
-Keep immutable facts unchanged. Reframe only without altering their meaning. Put an unsupported preferred technology in an interests or learning field only when the candidate source explicitly supports that interest; never present it as professional experience.
+Classify quantitative evidence as measured, sourced estimate, scope proxy, or confidential. Preserve supplied numbers and qualifiers exactly. Never convert an impression into a metric. When exact figures are unavailable, prefer defensible scope such as services, teams, users, regions, repositories, release steps, or recurring manual work.
 
-## Requirement matrix
+## Role model and requirement matrix
 
-Extract explicit requirements before drafting. Use one row per requirement:
+Capture explicit responsibilities, required and preferred qualifications, domain, target seniority, operating expectations, and repeated verbs. Record inferred expectations separately.
 
-| Requirement | Priority | Evidence class | Source IDs | Resume treatment |
-|---|---|---|---|---|
-| Exact requirement phrase | required / preferred | direct / transferable / interest / gap | stable IDs or none | claim / demonstrate / omit / disclose gap |
+Use one row per explicit requirement:
 
-Distinguish requirement priority from repetition frequency. A repeated phrase is not automatically mandatory. Preserve exact terminology where it is accurate and natural; semantic clarity outranks keyword repetition.
+| ID | Requirement | Priority | Evidence class | Source IDs | Resume paths | Treatment |
+|---|---|---|---|---|---|---|
+| stable ID | exact phrase | required / preferred | direct / transferable / interest / gap | IDs or none | paths or none | claim / demonstrate / omit / disclose |
 
-## Titles and seniority
+Repetition is a relevance signal, not proof that a phrase is mandatory. Use exact terminology when accurate and natural. Never paste hidden keywords, copy the job description, or turn preferred technology into professional experience.
 
-- Preserve every historical job title from the candidate source.
-- Use the target job title as the resume headline only when the candidate's evidence supports the function and seniority.
-- Use a close, honest headline when the advertised title would overstate the candidate's background.
-- Describe leadership through sourced actions rather than inferring it from years of experience.
+## Career-stage strategy
 
-## Summary
+Choose the order that exposes the strongest target evidence while preserving chronology.
 
-Write at most two sentences. Include:
+| Profile | Default evidence order after the contact block |
+|---|---|
+| Student or new graduate | Education, Skills, Experience, Projects, Awards |
+| Junior with professional experience | Skills, Experience, Projects, Education, Awards |
+| Mid-level | Summary when useful, Skills, Experience, selected Projects, Education, Awards |
+| Senior | Summary, Skills, Experience, selected leadership/open source, Education |
+| Staff or lead | Technical summary, selected organizational impact when supported, Experience, Skills, selected external signals, Education |
+| Career change | Summary, Skills, relevant Projects, chronological Experience, Education |
+| ML research or research engineering | Research/engineering summary, Skills, Experience, selected Publications/Projects, Education |
 
-1. an honest target-facing professional identity;
-2. experience duration calculated from dated relevant work when dates are sufficiently precise;
-3. the strongest supported technical focus;
-4. one or two supported capabilities important to the role.
+Treat these as defaults, not rigid templates. Keep reverse chronology inside the experience section. Do not use a purely functional resume to hide dates or employers.
 
-If dates are insufficient, use a sourced qualitative description instead of inventing a duration. Keep company-specific language out unless the candidate source establishes that context.
+## Headline and summary
 
-## Experience bullets
+- Put a concise target identity beneath the name, such as `Backend Software Engineer | Distributed Systems and Go`.
+- Use the advertised title only when evidence supports its function and seniority; otherwise use the closest honest identity.
+- Preserve every historical title unchanged.
+- Do not use `Aspiring`, `Technology Enthusiast`, `Seeking a Position`, or unsupported adjectives.
 
-Prefer this structure when the source supports every component:
+Use a summary only when it clarifies specialization, seniority, transition, research focus, or uncommon scope. A straightforward student or junior resume may omit it. Keep it to two compact sentences for normal resumes; senior or staff summaries may use up to roughly five short rendered lines when necessary.
+
+A useful summary establishes professional identity, dated relevant experience when calculable without double-counting, technical focus, scale, and one or two differentiators. Do not invent a duration when dates overlap or lack precision.
+
+## SWE achievement bullets
+
+Prefer a varied combination of:
 
 ```text
-Action + scope or deliverable + relevant method/technology + verified result
+Action + engineering object + method or decision + scope + verified outcome
+Problem + intervention + result
+Scope + ownership + impact
+Migration from state + to state + breadth + benefit
+Risk + control + reliability or security outcome
 ```
 
-Use a result without a number when no measured metric exists. Preserve any supplied metric exactly. Aim for:
+Important bullets should identify the service, component, model, platform, pipeline, migration, product flow, or engineering process. Include the technical method, constraint, or trade-off when it demonstrates judgment. Use an outcome without a number when no metric exists.
 
-- up to four bullets for the most recent or most relevant role;
-- up to three bullets for other roles;
-- strongest supported requirement first;
-- one primary idea per bullet;
-- concise lines that remain readable in the rendered PDF.
+Match evidence to level:
 
-Demonstrate collaboration, ownership, communication, mentoring, or problem solving through an event or outcome. A bare soft-skill label is weaker than sourced behavior.
+- **Student/junior:** concrete contribution, shipped feature, testing, accessibility, learning demonstrated through delivery.
+- **Mid-level:** independent end-to-end ownership, production operation, product collaboration, service or user outcomes.
+- **Senior:** architecture, trade-offs, multi-service scope, reliability, migrations, mentoring, and technical direction.
+- **Staff/lead:** ambiguous problems, multi-team strategy, standards, platforms, organizational adoption, risk, and engineering leverage.
 
-## Skills
+Use two to five high-signal bullets for a recent important role. Compress less relevant or older roles to the evidence needed for chronology and progression. Put the strongest target evidence first. Avoid `responsible for`, `worked on`, `helped with`, and repeated generic verbs.
 
-- Include skills supported by work, projects, education, or an explicit candidate inventory.
-- Order categories and keywords by relevance to the target role.
-- Keep categories compact; split a category when scanning becomes difficult.
-- Separate professional skills from explicit learning interests.
+## Skills, projects, and links
 
-The resume may expose genuine gaps. Coverage percentage is an analysis result, not a target that licenses unsupported claims.
+- Group hard skills into recognizable, target-relevant categories.
+- Ensure most prominent technologies also appear in work, project, education, or sourced summary context.
+- Remove obsolete, beginner-only, duplicated, or weakly remembered tools.
+- Demonstrate communication, collaboration, ownership, and mentoring through behavior rather than soft-skill labels.
+- Separate professional evidence from explicit learning interests.
 
-## Education and projects
+For a project, show the problem or user, architecture or difficult decision, testing/deployment, and verified adoption, performance, accuracy, or scope. Prioritize projects for students, juniors, career changers, and candidates entering a specialty without equivalent professional evidence. Senior candidates should include only unusually relevant projects or external work.
 
-Preserve institutions, qualifications, dates, scores, project names, URLs, and technology facts. Select projects for relevance without rewriting their underlying function or outcome.
+Include LinkedIn, GitHub, portfolios, publications, or demos only when polished, consistent with the resume, and relevant. Do not expose repositories with secrets or contradictory claims.
 
-Use this default order:
+## Compression and page strategy
 
-1. profile;
-2. summary;
-3. work experience;
-4. skills;
-5. education;
-6. projects.
+Use the shortest length that preserves relevant proof:
 
-Keep projects last when included unless the user requests a different order for a credible reason.
+- normally one page for students and junior engineers;
+- one or two pages for mid-level engineers when page two contains useful outcomes or ownership;
+- up to two pages for senior and staff candidates with differentiated system or organizational scope.
 
-## Final evidence audit
+Do not shrink text or margins to force one page. Remove unrelated history, routine duties, duplicated claims, generic course badges, weak links, and low-value projects before removing target evidence.
+
+## ATS application policy
+
+For the application copy:
+
+- prefer a single-column, reverse-chronological layout;
+- keep contact details in the document body;
+- use conventional headings and consistent dates;
+- avoid photos, skill bars, charts, text boxes, decorative icons, and complex columns;
+- introduce useful acronyms once, such as `Amazon Web Services (AWS)` or `continuous integration and delivery (CI/CD)`;
+- keep URLs meaningful when printed;
+- verify selectable text and logical plain-text extraction order.
+
+Use employer-requested file formats. PDF is the default only when the employer does not request DOCX or another format.
+
+## Final audit
 
 Before rendering, confirm:
 
-- every employer, title, date, technology, metric, and project is source-backed;
-- every explicit job requirement appears in the match matrix;
-- every claimed required skill has direct or defensible transferable evidence;
+- every material claim maps to source IDs;
+- every explicit requirement appears in the requirement matrix;
+- titles, dates, technologies, ownership, metrics, and contact information are source-backed;
+- gaps remain gaps and inferred expectations stay labelled;
 - target terminology reads naturally;
-- no historical title was rewritten as the target title;
-- gaps remain gaps;
-- section order matches the chosen strategy;
-- contact information came from the candidate source supplied for this run.
+- section order matches the career-stage strategy;
+- the top third communicates role, level, stack, impact, and scale;
+- verb tense, spelling, capitalization, and technology names are consistent;
+- every line increases confidence that the candidate can perform the target job.
