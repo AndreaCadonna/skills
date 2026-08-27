@@ -1,6 +1,6 @@
 # Tailor Resume
 
-`tailor-resume` is a local Codex skill for creating truthful, job-specific software-engineering resumes from a candidate knowledge base. It models career stage and role requirements, maps claims to evidence, produces validated resume JSON, and renders TeX or PDF with the original Resumake v2 LaTeX templates.
+`tailor-resume` is a local Codex skill for creating truthful, job-specific software-engineering resumes from a candidate knowledge base. It models career stage and role requirements, maps claims to evidence, produces validated resume JSON, and renders TeX or PDF with either a custom ATS layout or one of the nine original Resumake v2 templates.
 
 The primary workflow runs locally. It does not send resume data to a hosted Resumake endpoint.
 
@@ -11,6 +11,7 @@ The primary workflow runs locally. It does not send resume data to a hosted Resu
 - Applies career-stage section, summary, bullet, and page strategies.
 - Separates structured validation from a private source-evidence audit.
 - Checks ATS template choice, terminology, chronology, bullet quality, and skills-in-context signals.
+- Provides an additive one-column, table-free ATS renderer with configurable safe typography and professional output names.
 - Supports all nine original Resumake v2 LaTeX templates.
 - Produces a PDF when the required TeX engine is installed, or a self-contained TeX source bundle otherwise.
 - Keeps personal source documents outside the published skill package.
@@ -32,7 +33,7 @@ Invoke the skill by name and provide a job description plus the candidate source
 Example prompts:
 
 ```text
-Use $tailor-resume to tailor my resume for this job description. Use template 1 and render a PDF.
+Use $tailor-resume to tailor my resume for this job description. Use the custom ATS renderer and render a PDF.
 ```
 
 ```text
@@ -45,15 +46,21 @@ Use $tailor-resume for this role with template 4. Generate the TeX bundle only.
 
 The model should treat your supplied resume, documents, sheets, and explicit corrections as the only factual sources. See [SKILL.md](SKILL.md) for the complete agent workflow and safeguards.
 
-The renderer JSON supports non-rendered `strategy` metadata, a rendered `basics.headline`, and project `highlights[]`. See [references/resume-schema.md](references/resume-schema.md).
+The renderer JSON supports non-rendered `strategy` metadata, a rendered `basics.label`, selected profile links, `renderer` configuration, and project `highlights[]`. Legacy `basics.headline` remains accepted as an alias. See [references/resume-schema.md](references/resume-schema.md).
+
+## Renderers
+
+Use `renderer.kind: "ats"` for normal application copies. The custom layout uses one column, flowing skill paragraphs, visible labeled links, at least 10.5-point body text, and automated checks for overflow, page count, selectable text, section order, and URI annotations.
+
+Use `renderer.kind: "resumake"` for an explicitly requested original template. Inputs without `renderer` retain this legacy behavior. The custom layout is not Resumake template 10 and the vendored generators remain unchanged.
 
 ## Templates
 
-Templates are selected with a number from `1` to `9`. Template 1 is the ATS application default. Other templates are available for explicit preference or portfolio copies but require careful extraction-order review.
+Original Resumake templates are selected with a number from `1` to `9`. They are available for explicit preference or portfolio copies and require careful extraction-order review for applications.
 
 | ID | Style | TeX engine |
 | --- | --- | --- |
-| 1 | Conservative and ATS-friendly | `pdflatex` |
+| 1 | Conservative upstream layout (10-point body default) | `pdflatex` |
 | 2 | Awesome-CV based | `xelatex` |
 | 3 | Dense technical layout | `pdflatex` |
 | 4 | Deedy-Resume based | `xelatex` |
@@ -68,7 +75,8 @@ More detailed selection guidance is in [references/templates.md](references/temp
 ## Requirements
 
 - Node.js 18 or newer.
-- `pdflatex` and/or `xelatex` to compile PDFs, depending on the selected template.
+- `pdflatex` for the custom ATS renderer; `pdflatex` and/or `xelatex` for original templates.
+- Poppler `pdfinfo` and `pdftotext` for compiled ATS quality checks.
 - Python and ReportLab only if you choose the optional generic fallback renderer.
 
 The primary Resumake renderer uses vendored generators and assets, so it does not require an npm install or a network request.
@@ -79,6 +87,12 @@ From the `tailor-resume` directory, validate a resume JSON file:
 
 ```shell
 node scripts/validate_resume.mjs path/to/resume.json
+```
+
+Render a custom ATS bundle. `--basename` names the bundle directory, while `renderer.documentBasename` in JSON names the TeX/PDF files:
+
+```shell
+node scripts/render_ats_resume.mjs --input path/to/resume.json --output-dir output --basename company-role
 ```
 
 Render template 4:
@@ -105,7 +119,7 @@ Run the regression suite:
 node scripts/test_resume.mjs
 ```
 
-Use `--overwrite` only when you intentionally want to replace an existing output. The renderer writes a manifest and copies the required template files, fonts, and license notices into the generated source bundle.
+Use `--overwrite` only when you intentionally want to replace an existing output. Original Resumake bundles copy the required template files, fonts, and license notices; custom ATS bundles include `qa.json` and clearly identify their separate provenance.
 
 The expected JSON shape is documented in [references/resume-schema.md](references/resume-schema.md), with synthetic data in [assets/sample-resume.json](assets/sample-resume.json).
 
@@ -125,7 +139,7 @@ The skill's original code and documentation are provided under the [MIT License]
 | --- | --- |
 | `SKILL.md` | Agent instructions and end-to-end workflow |
 | `agents/` | Skill metadata used by Codex |
-| `scripts/` | Schema validation, evidence auditing, regression tests, and rendering commands |
+| `scripts/` | Schema validation, evidence auditing, regression tests, custom ATS rendering, and original Resumake rendering |
 | `references/` | Schema, policy, source, renderer, and template guidance |
 | `assets/` | Synthetic example plus vendored Resumake v2 runtime assets |
 | `LICENSE` and `NOTICE` | Project and third-party licensing information |

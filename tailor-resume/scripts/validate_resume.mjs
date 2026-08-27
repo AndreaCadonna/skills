@@ -34,13 +34,20 @@ export const CAREER_STAGES = Object.freeze([
 ]);
 
 export const OUTPUT_MODES = Object.freeze(["application", "portfolio"]);
+export const RENDERER_KINDS = Object.freeze(["ats", "resumake"]);
+export const ATS_BODY_FONT_SIZES = Object.freeze([10.5, 11, 11.5, 12]);
+export const PAGE_SIZES = Object.freeze(["A4", "Letter"]);
 
 const ALLOWED_SECTIONS = new Set([...DEFAULT_SECTIONS, "awards"]);
 const CAREER_STAGE_SET = new Set(CAREER_STAGES);
 const OUTPUT_MODE_SET = new Set(OUTPUT_MODES);
+const RENDERER_KIND_SET = new Set(RENDERER_KINDS);
+const ATS_BODY_FONT_SIZE_SET = new Set(ATS_BODY_FONT_SIZES);
+const PAGE_SIZE_SET = new Set(PAGE_SIZES);
 const SUMMARY_RECOMMENDED = new Set(["senior", "staff", "career-change", "research"]);
 const WEAK_BULLET_START = /^(responsible for|worked on|helped with|assisted with|involved in)\b/i;
 const SCALE_OR_OUTCOME = /(\d|%|percent|across|adopted|availability|cost|customer|decreas|eliminat|faster|improv|increas|latency|lower|reduc|reliability|revenue|saving|serving|team|throughput|user)/i;
+const VAGUE_ENGINEERING_OBJECT = /\b(major feature|key component|various improvements|multiple improvements|several improvements|various features)\b/i;
 const CONVENTIONAL_HEADINGS = new Set([
   "profile", "summary", "awards", "experience", "work experience",
   "professional experience", "relevant experience", "technical experience",
@@ -54,6 +61,29 @@ function arrayOrEmpty(value) {
 
 function text(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function plainObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value);
+}
+
+export function sanitizeDocumentBasename(value, fallback = "resume") {
+  let name = text(value) || fallback;
+  name = name.replace(/\.pdf$/i, "")
+    .replace(/[<>:\"/\\|?*\x00-\x1f]/g, "-")
+    .replace(/\s+/g, "_")
+    .replace(/[. ]+$/g, "")
+    .slice(0, 120);
+  if (!name || name === "." || name === "..") name = fallback;
+  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(name)) name = `${name}-resume`;
+  return name;
+}
+
+function normalizePageSize(value) {
+  const clean = text(value).toLowerCase();
+  if (clean === "a4") return "A4";
+  if (clean === "letter") return "Letter";
+  return text(value) || "A4";
 }
 
 function recommendedSections(stage) {
@@ -84,16 +114,9 @@ function dateStyle(value) {
 }
 
 export function normalizeResume(input) {
-  const basics = input?.basics
-    && typeof input.basics === "object"
-    && !Array.isArray(input.basics)
-    ? input.basics
-    : {};
-  const strategy = input?.strategy
-    && typeof input.strategy === "object"
-    && !Array.isArray(input.strategy)
-    ? input.strategy
-    : {};
+  const basics = plainObject(input?.basics) ? input.basics : {};
+  const strategy = plainObject(input?.strategy) ? input.strategy : {};
+  const renderer = plainObject(input?.renderer) ? input.renderer : {};
   const rawAwards = arrayOrEmpty(input?.awards);
   const legacySummaryIndex = rawAwards.findIndex((award) => (
     text(award?.summary)
@@ -107,6 +130,12 @@ export function normalizeResume(input) {
 
   return {
     selectedTemplate: input?.selectedTemplate ?? 1,
+    renderer: {
+      kind: text(renderer.kind) || "resumake",
+      documentBasename: text(renderer.documentBasename),
+      bodyFontSize: renderer.bodyFontSize ?? 11,
+      pageSize: normalizePageSize(renderer.pageSize),
+    },
     strategy: {
       careerStage: text(strategy.careerStage) || "unspecified",
       outputMode: text(strategy.outputMode) || "application",
@@ -121,7 +150,7 @@ export function normalizeResume(input) {
       : [...DEFAULT_SECTIONS],
     basics: {
       name: text(basics.name),
-      headline: text(basics.headline),
+      label: text(basics.label) || text(basics.headline),
       email: text(basics.email),
       phone: text(basics.phone),
       website: text(basics.website),
@@ -194,7 +223,7 @@ export function validateResume(input) {
   if (input.sections !== undefined && !Array.isArray(input.sections)) {
     error("sections", "Expected an array.");
   }
-  for (const field of ["basics", "headings", "strategy"]) {
+  for (const field of ["basics", "headings", "strategy", "renderer"]) {
     if (
       input[field] !== undefined
       && (!input[field] || typeof input[field] !== "object" || Array.isArray(input[field]))
@@ -202,12 +231,38 @@ export function validateResume(input) {
       error(field, "Expected an object.");
     }
   }
+  if (plainObject(input.renderer)) {
+    for (const field of ["kind", "documentBasename", "pageSize"]) {
+      if (input.renderer[field] !== undefined && typeof input.renderer[field] !== "string") {
+        error(`renderer.${field}`, "Expected a string.");
+      }
+    }
+    if (input.renderer.bodyFontSize !== undefined && typeof input.renderer.bodyFontSize !== "number") {
+      error("renderer.bodyFontSize", "Expected a number.");
+    }
+  }
 
   const resume = normalizeResume(input);
   const { strategy } = resume;
+  const tailoredWorkflow = plainObject(input.strategy) || input?.renderer?.kind === "ats";
 
   if (!Number.isInteger(resume.selectedTemplate) || resume.selectedTemplate < 1 || resume.selectedTemplate > 9) {
     error("selectedTemplate", "Expected an integer from 1 through 9.");
+  }
+  if (!RENDERER_KIND_SET.has(resume.renderer.kind)) {
+    error("renderer.kind", "Use ats or resumake.");
+  }
+  if (resume.renderer.kind === "ats" && !ATS_BODY_FONT_SIZE_SET.has(resume.renderer.bodyFontSize)) {
+    error("renderer.bodyFontSize", `Use one of: ${ATS_BODY_FONT_SIZES.join(", ")} points.`);
+  }
+  if (!PAGE_SIZE_SET.has(resume.renderer.pageSize)) {
+    error("renderer.pageSize", "Use A4 or Letter.");
+  }
+  if (resume.renderer.documentBasename) {
+    const safeName = sanitizeDocumentBasename(resume.renderer.documentBasename);
+    if (safeName !== resume.renderer.documentBasename) {
+      warn("renderer.documentBasename", `The output basename will be sanitized to ${safeName}.`);
+    }
   }
   if (!CAREER_STAGE_SET.has(strategy.careerStage)) {
     error("strategy.careerStage", "Use one of: " + CAREER_STAGES.join(", ") + ".");
@@ -224,8 +279,8 @@ export function validateResume(input) {
   if (["student", "junior"].includes(strategy.careerStage) && strategy.pageTarget === 2) {
     warn("strategy.pageTarget", "Start with one page for this career stage unless a second page preserves essential relevant evidence.");
   }
-  if (strategy.outputMode === "application" && resume.selectedTemplate !== 1) {
-    warn("selectedTemplate", "Only template 1 is the ATS application default; this template requires explicit extraction-order review.");
+  if (tailoredWorkflow && strategy.outputMode === "application" && resume.renderer.kind === "resumake") {
+    warn("renderer.kind", "Original Resumake templates are not ATS-verified; this application copy requires explicit extraction-order review.");
   }
   if (!strategy.targetRole) {
     warn("strategy.targetRole", "Record the target role so positioning can be audited.");
@@ -237,17 +292,27 @@ export function validateResume(input) {
   if (!resume.basics.name) {
     error("basics.name", "A candidate name is required.");
   }
-  if (strategy.outputMode === "application" && !resume.basics.headline) {
-    warn("basics.headline", "Add an evidence-supported target headline beneath the candidate name.");
+  if (tailoredWorkflow && strategy.outputMode === "application" && !resume.basics.label) {
+    warn("basics.label", "Add an evidence-supported target headline beneath the candidate name.");
   }
-  if (resume.basics.headline.length > 140) {
-    warn("basics.headline", "Keep the headline compact enough to scan as one or two short lines.");
+  if (resume.basics.label.length > 120) {
+    warn("basics.label", "Keep the headline to approximately 120 characters or fewer.");
   }
   if (resume.basics.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resume.basics.email)) {
     warn("basics.email", "Email format looks unusual.");
   }
-  if (resume.basics.website.split(/\s+/).filter(Boolean).length > 1) {
+  if (resume.renderer.kind === "resumake" && resume.basics.website.split(/\s+/).filter(Boolean).length > 1) {
     warn("basics.website", "Resumake renders one website; only the first URL will be used.");
+  }
+  if (resume.renderer.kind === "ats" && resume.basics.profiles.length > 3) {
+    warn("basics.profiles", "The ATS renderer displays the first three selected profiles; remove unselected links.");
+  }
+  if (resume.renderer.kind === "ats") {
+    resume.basics.profiles.slice(0, 3).forEach((profile, index) => {
+      if (profile.url && !profile.label) {
+        warn(`basics.profiles[${index}].label`, "Add a descriptive label such as LinkedIn, GitHub, or Portfolio.");
+      }
+    });
   }
   for (const [field, url] of [
     ["basics.website", resume.basics.website.split(/\s+/).filter(Boolean)[0] || ""],
@@ -306,14 +371,14 @@ export function validateResume(input) {
     if (!job.company) error(`${base}.company`, "Company is required.");
     if (!job.position) error(`${base}.position`, "Historical job title is required.");
     if (!job.highlights.length) error(`${base}.highlights`, "At least one highlight is required.");
-    const recommendedMax = index === 0 ? 5 : 4;
-    if (job.highlights.length > recommendedMax) {
-      warn(`${base}.highlights`, `Recommended maximum is ${recommendedMax} high-signal bullets.`);
+    if (job.highlights.length > 5) {
+      warn(`${base}.highlights`, "Use no more than five high-signal bullets for a major role; compress by relevance.");
     }
     job.highlights.forEach((highlight, bulletIndex) => {
       const field = `${base}.highlights[${bulletIndex}]`;
       if (highlight.length > 300) warn(field, "Bullet may wrap excessively.");
       if (WEAK_BULLET_START.test(highlight)) warn(field, "Replace the weak duty phrase with the candidate's supported contribution.");
+      if (VAGUE_ENGINEERING_OBJECT.test(highlight)) warn(field, "Name the concrete service, component, product flow, pipeline, or engineering process.");
       if (index === 0 && bulletIndex === 0 && !SCALE_OR_OUTCOME.test(highlight)) {
         warn(field, "The first recent-role bullet should usually show a defensible result or scope signal.");
       }

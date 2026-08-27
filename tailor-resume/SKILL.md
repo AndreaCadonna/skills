@@ -1,11 +1,11 @@
 ---
 name: tailor-resume
-description: Tailor truthful software-engineering resumes and CVs to job descriptions, build source-backed ATS content, audit requirement and claim evidence, convert existing resume data into the local schema, and render verified PDFs or TeX with the nine original Resumake v2 LaTeX templates. Use for targeted SWE applications, resume rewrites, requirement matching, resume JSON preparation, template selection, evidence audits, or final PDF generation.
+description: Tailor truthful software-engineering resumes and CVs to job descriptions, build source-backed ATS content, audit requirement and claim evidence, convert existing resume data into the local schema, and render verified PDFs or TeX with a custom ATS layout or the nine original Resumake v2 templates. Use for targeted SWE applications, resume rewrites, requirement matching, resume JSON preparation, renderer selection, evidence audits, or final PDF generation.
 ---
 
 # Tailor Resume
 
-Produce a role-specific evidence document whose claims remain traceable to candidate sources. Use the bundled Resumake v2 generators locally instead of a remote resume service.
+Produce a role-specific evidence document whose claims remain traceable to candidate sources. Use the additive local ATS renderer for parser-oriented application copies and keep the bundled original Resumake v2 generators available for explicit template choices.
 
 ## 1. Resolve the request
 
@@ -39,17 +39,21 @@ Extract explicit responsibilities, required and preferred qualifications, domain
 
 Map each explicit requirement to direct evidence, transferable evidence, interest-only knowledge, or a gap. Record stable source identifiers. Build the career-stage strategy and recommended section order under the tailoring policy.
 
+For every recent or target-relevant experience, inventory the strongest evidence units and audit `Goal/problem | Engineering object | Ownership | Method/decision | Scope | Outcome`, plus confidence, disclosure level, and source IDs. Include high-value units that may lose the space competition, not only facts already selected for bullets. Missing values are evidence prompts, not permission to infer facts.
+
 When important evidence is vague, ask focused questions about the engineering object, contribution, method, users, system scale, baseline, result, or defensible scope proxy. Never manufacture a metric to strengthen a bullet.
 
 Completion criterion: every explicit requirement is classified, inferred signals are labelled, and every evidence assertion has a source.
 
 ## 4. Draft and compress from evidence
 
-Select the most relevant supported facts. Preserve historical titles, employers, dates, technologies, ownership, scope, and metrics. Write the headline, conditional summary, experience bullets, skills, education, and relevant projects under the career-stage and SWE guidance.
+Select the most relevant supported facts. Preserve historical titles, employers, dates, technologies, ownership, scope, metrics, user goals, replaced workflows, and qualitative outcomes. Do not let technical detail displace stronger supported purpose or impact. Write `basics.label` as the target-facing headline, plus the conditional summary, experience bullets, skills, education, and relevant projects under the career-stage and SWE guidance. Never replace a historical `work[].position` with the target title.
 
-Maintain a private evidence sidecar alongside the draft. Each material claim must identify its resume path and one or more source IDs. Remove low-value duties, duplicated claims, obsolete tools, weak projects, and links that do not strengthen the application.
+Maintain a private evidence sidecar alongside the draft. Each material claim must identify its resume path and one or more source IDs. For new tailored drafts, add the semantic `contentAudit` from [references/application-audit.md](references/application-audit.md): record which of the six evidence fields each bullet preserves, justify important supported goal/outcome omissions, state one primary idea per recent or target-relevant bullet, flag responsibility summaries that compete with stronger accomplishments, and review combined coverage for each role. Architecture or decision bullets may rely on a nearby result rather than repeat it.
 
-Completion criterion: every material claim is supported, the top third establishes role fit, and every included line advances the application.
+Remove low-value duties, duplicated claims, obsolete tools, weak projects, and links that do not strengthen the application. Use supported qualitative outcomes and defensible scope proxies when metrics do not exist; never invent precision or treat technical wording as impact.
+
+Completion criterion: every material claim is supported, each recent or target-relevant bullet has one primary idea, combined role bullets preserve important supported purpose and outcome or record a deliberate omission, the top third establishes role fit, and every included line advances the application.
 
 ## 5. Validate structure and evidence
 
@@ -65,13 +69,23 @@ When an evidence sidecar is available, run:
 node <skill-directory>/scripts/audit_application.mjs <resume.json> <application-audit.json>
 ```
 
-Resolve every error. Review warnings against the tailoring policy instead of suppressing them mechanically. Do not describe schema validation alone as proof that resume claims are supported.
+Resolve every error. Review warnings against the tailoring policy instead of suppressing them mechanically, including legacy sidecars without `contentAudit` and responsibility summaries that displace stronger accomplishments. Do not describe schema validation alone as proof that resume claims are supported or that impact evidence was preserved.
 
-Completion criterion: schema validation succeeds, the evidence audit succeeds when applicable, and warnings are corrected or intentionally accepted.
+Completion criterion: schema validation succeeds, the evidence audit succeeds when applicable, semantic content-selection coverage is complete for new tailored drafts, and warnings are corrected or intentionally accepted.
 
 ## 6. Render and inspect
 
-Use the user's selected template. For an ATS application copy, default to template 1 and warn before using a template that is not ATS-verified. For a portfolio copy, follow the user's visual preference.
+Choose the renderer before choosing appearance. For an ATS application copy, default to `renderer.kind: "ats"`. Use `renderer.kind: "resumake"` only when the user explicitly wants one of the nine original templates or the workflow must preserve legacy behavior. Do not describe the custom layout as Resumake template 10 or as a modified original template.
+
+Render a custom ATS bundle with:
+
+```text
+node <skill-directory>/scripts/render_ats_resume.mjs --input <resume.json> --output-dir <directory> --basename <bundle-name>
+```
+
+The bundle name is an internal directory name. Use `renderer.documentBasename` for the professional PDF filename. Add `--tex-only` when source only is requested or `pdflatex` is unavailable.
+
+Render an original Resumake bundle with:
 
 Render with:
 
@@ -81,7 +95,7 @@ node <skill-directory>/scripts/render_resumake.mjs --input <resume.json> --outpu
 
 Use `--template 1` through `--template 9` only to override JSON. Use `--overwrite` only when replacing an identified prior bundle is intended. Add `--tex-only` when source only is requested or the TeX engine is unavailable. Use the ReportLab renderer only when the user explicitly accepts a generic non-Resumake fallback.
 
-Inspect every PDF page for clipping, wrapping, hierarchy, whitespace, glyphs, links, and meaningful page use. Confirm text is selectable, extracted text follows logical reading order, conventional headings survive extraction, and contact details are present in the body. Perform a rapid top-third scan for target role, level, relevant stack, strongest impact, and scale.
+Review the ATS renderer's `qa.json` and `build.log`, then inspect every PDF page for clipping, wrapping, orphaned headings, split entries, hierarchy, whitespace, glyphs, visible URLs, and meaningful page use. Confirm there are no overfull TeX boxes, body text is at least 10.5 points, text is selectable, extracted text follows logical reading order, conventional headings survive extraction, URI annotations exist, and contact details are present in the body. Perform a rapid top-third scan for target role, level, relevant stack, strongest impact, and scale.
 
 Use the shortest length that preserves differentiated evidence. Do not achieve a page target through unreadable typography or removal of essential proof.
 

@@ -6,7 +6,12 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
-import { normalizeResume, readResume, validateResume } from "./validate_resume.mjs";
+import {
+  normalizeResume,
+  readResume,
+  sanitizeDocumentBasename,
+  validateResume,
+} from "./validate_resume.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const VENDOR_DIR = path.resolve(SCRIPT_DIR, "../assets/resumake-v2");
@@ -262,6 +267,9 @@ async function main() {
   if (!report.valid) {
     throw new Error("Resume validation failed:\n" + JSON.stringify(report.errors, null, 2));
   }
+  if (report.normalized.renderer.kind !== "resumake") {
+    throw new Error("renderer.kind is ats; use render_ats_resume.mjs for this input.");
+  }
 
   const template = report.normalized.selectedTemplate;
   const engine = TEMPLATE_ENGINES[template];
@@ -270,7 +278,7 @@ async function main() {
   const tex = injectHeadline(
     generator(values),
     template,
-    values.basics.headline,
+    values.basics.label,
   );
   const bundleDir = await prepareBundle(opts.outputDir, safeBasename(opts.basename), opts.overwrite);
 
@@ -281,9 +289,12 @@ async function main() {
   await fs.cp(path.join(VENDOR_DIR, "licenses"), path.join(bundleDir, "licenses"), { recursive: true });
   await fs.writeFile(path.join(bundleDir, "resume.json"), JSON.stringify(report.normalized, null, 2) + "\n", "utf8");
   await fs.writeFile(path.join(bundleDir, "resume.tex"), tex + "\n", "utf8");
+  const documentBasename = report.normalized.renderer.documentBasename
+    ? sanitizeDocumentBasename(report.normalized.renderer.documentBasename)
+    : "resume";
   await fs.writeFile(
     path.join(bundleDir, "README.md"),
-    `# Resumake v2 template ${template}\n\nGenerated from the vendored Resumake v2 generator.\n\nCompile with:\n\n    ${engine} -no-shell-escape resume.tex\n\nSee TEMPLATE-PROVENANCE.md, THIRD_PARTY_NOTICES.md, LICENSE-RESUMAKE, and licenses/ for licensing and attribution.\n`,
+    `# Resumake v2 template ${template}\n\nGenerated from the vendored Resumake v2 generator.\n\nCompile with:\n\n    ${engine} -no-shell-escape resume.tex\n\nThe automated renderer names the compiled PDF ${documentBasename}.pdf.\n\nSee TEMPLATE-PROVENANCE.md, THIRD_PARTY_NOTICES.md, LICENSE-RESUMAKE, and licenses/ for licensing and attribution.\n`,
     "utf8",
   );
 
@@ -294,14 +305,17 @@ async function main() {
     if (!result.ok) {
       throw new Error(`${result.message}\nThe complete source bundle remains at ${bundleDir}. See build.log.`);
     }
-    pdfPath = path.join(bundleDir, "resume.pdf");
-    await fs.access(pdfPath);
+    const compiledPdfPath = path.join(bundleDir, "resume.pdf");
+    await fs.access(compiledPdfPath);
+    pdfPath = path.join(bundleDir, `${documentBasename}.pdf`);
+    if (pdfPath !== compiledPdfPath) await fs.rename(compiledPdfPath, pdfPath);
   }
 
   console.log(JSON.stringify({
     template,
     engine,
     bundleDir,
+    documentBasename,
     texPath: path.join(bundleDir, "resume.tex"),
     pdfPath,
     warnings: report.warnings,

@@ -39,12 +39,21 @@ Use stable IDs for factual units:
     "facts": [{
       "id": "work-company-performance",
       "statement": "Source-backed achievement",
+      "productContext": "Internal operations workflow",
+      "engineeringObject": "React interface and TypeScript service",
+      "ownership": "Implemented the end-to-end change",
+      "method": "Profiled the slow path and changed the data-loading strategy",
+      "decision": "Kept the existing API contract to reduce migration risk",
+      "scale": "Used by three operations teams",
+      "outcome": "Reduced median page-load time",
       "technologies": ["Angular", "RxJS"],
       "metrics": [{
         "value": "32%",
         "kind": "measured",
         "description": "Median page-load reduction"
       }],
+      "confidence": "high",
+      "disclosure": "generalized",
       "source": "doc:Experience KB#Company"
     }]
   }]
@@ -52,6 +61,8 @@ Use stable IDs for factual units:
 ```
 
 IDs exist for traceability; they do not appear in the final resume.
+
+Use `high`, `medium`, or `low` confidence. Use `public`, `generalized`, `confidential`, or `ask` for disclosure. Low-confidence or disclosure-sensitive facts should trigger a focused confirmation before they become material resume claims.
 
 ## Privacy boundary
 

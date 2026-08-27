@@ -1,5 +1,11 @@
 {
   "selectedTemplate": 1,
+  "renderer": {
+    "kind": "ats",
+    "documentBasename": "Alex_Example_Full_Stack_Software_Engineer_Resume",
+    "bodyFontSize": 11,
+    "pageSize": "A4"
+  },
   "strategy": {
     "careerStage": "mid",
     "outputMode": "application",
@@ -25,7 +31,7 @@
   ],
   "basics": {
     "name": "Alex Example",
-    "headline": "Full Stack Software Engineer | TypeScript, React, and Node.js",
+    "label": "Full Stack Software Engineer | TypeScript, React, and Node.js",
     "email": "alex.johnson@example.com",
     "phone": "+44 1632 960000",
     "website": "https://alex.example",
@@ -36,6 +42,10 @@
       {
         "label": "LinkedIn",
         "url": "https://social.example/alex"
+      },
+      {
+        "label": "GitHub",
+        "url": "https://code.example/alex"
       }
     ]
   },

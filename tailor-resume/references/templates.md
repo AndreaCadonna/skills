@@ -1,18 +1,18 @@
-# Resumake v2 template selection
+# Renderer and template selection
 
-The skill vendors all nine original generators. Select output mode before selecting appearance.
+The skill provides one additive custom ATS renderer and vendors all nine original Resumake v2 generators unchanged. Select the renderer before selecting appearance.
 
 ## ATS application mode
 
-Default to template 1. It is the supported conservative, single-column application default. The other templates remain available but are not ATS-verified; warn the user before using one for an application copy and perform especially careful text-order inspection.
+Default to `renderer.kind: "ats"`. It produces the supported one-column, headline-aware, table-free application layout with 11-point body text by default. It is not an original Resumake template and must never be described as template 10.
 
 ## Portfolio mode
 
-Use the user's chosen design when the file supplements rather than replaces the application copy. A portfolio copy does not remove the need for a simple ATS version when an application system parses the resume.
+Use `renderer.kind: "resumake"` when the user explicitly selects an original template or the file is a portfolio copy. A portfolio copy does not remove the need for a simple ATS version when an application system parses the resume.
 
 | ID | General character | Engine | Application guidance |
 |---:|---|---|---|
-| 1 | Conservative single-column resume | `pdflatex` | Default ATS application template |
+| 1 | Conservative single-column resume using upstream 10-point `article` defaults | `pdflatex` | Legacy/simple option; not the custom ATS renderer |
 | 2 | Awesome-CV-inspired, polished and visual | `xelatex` | Portfolio-oriented; uses decorative contact icons |
 | 3 | Dense classic technical resume | `pdflatex` | Inspect table-based header extraction carefully |
 | 4 | Deedy-inspired single-column resume | `xelatex` | Visually distinctive; not ATS-verified |
@@ -24,4 +24,6 @@ Use the user's chosen design when the file supplements rather than replaces the 
 
 Templates 1, 3, 7, and 9 require `pdflatex`. Templates 2, 4, 5, 6, and 8 require `xelatex`. The renderer copies required assets into the output bundle.
 
-Do not describe the ReportLab fallback as a Resumake template. It is a separate generic renderer.
+Existing JSON without a `renderer` object retains Resumake behavior and uses `selectedTemplate`. The custom ATS renderer also leaves `selectedTemplate` restricted to 1-9 so provenance remains unambiguous.
+
+Do not describe the custom ATS renderer or the ReportLab fallback as a Resumake template. Both are separate local renderers.

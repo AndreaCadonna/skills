@@ -86,7 +86,7 @@ def normalize(data: dict) -> dict:
         'sections': list(data.get('sections', DEFAULT_SECTIONS)),
         'basics': {
             'name': clean(basics.get('name')),
-            'headline': clean(basics.get('headline')),
+            'label': clean(basics.get('label')) or clean(basics.get('headline')),
             'email': clean(basics.get('email')),
             'phone': clean(basics.get('phone')),
             'website': clean(basics.get('website')),
@@ -294,8 +294,8 @@ def build_pdf(resume: dict, target: Path) -> None:
             story.extend([
                 Paragraph(markup(basics['name']), style['name']),
             ])
-            if basics['headline']:
-                story.append(Paragraph(markup(basics['headline']), style['headline']))
+            if basics['label']:
+                story.append(Paragraph(markup(basics['label']), style['headline']))
             story.append(Paragraph(' | '.join(contacts), style['contact']))
 
         elif name == 'summary' and resume['summary']:

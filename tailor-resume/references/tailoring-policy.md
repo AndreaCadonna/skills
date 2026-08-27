@@ -13,6 +13,20 @@ Classify candidate facts before drafting:
 
 Classify quantitative evidence as measured, sourced estimate, scope proxy, or confidential. Preserve supplied numbers and qualifiers exactly. Never convert an impression into a metric. When exact figures are unavailable, prefer defensible scope such as services, teams, users, regions, repositories, release steps, or recurring manual work.
 
+For each recent or target-relevant experience, record:
+
+- product or user context;
+- the concrete engineering object;
+- ownership and collaborators;
+- implementation method and consequential decisions;
+- scale or a defensible scope proxy;
+- outcome;
+- confidence in the evidence;
+- disclosure level (`public`, `generalized`, `confidential`, or `ask`);
+- stable source IDs.
+
+Ask a focused follow-up question when a missing value would materially weaken an important claim. Generalize confidential context without fabricating it, and omit facts that cannot be disclosed safely.
+
 ## Role model and requirement matrix
 
 Capture explicit responsibilities, required and preferred qualifications, domain, target seniority, operating expectations, and repeated verbs. Record inferred expectations separately.
@@ -54,6 +68,22 @@ A useful summary establishes professional identity, dated relevant experience wh
 
 ## SWE achievement bullets
 
+### Preserve purpose and impact before compression
+
+For every recent or target-relevant role, compare the strongest evidence units before choosing bullets. Audit each unit as:
+
+```text
+Goal/problem | Engineering object | Ownership | Method/decision | Scope | Outcome
+```
+
+Treat a user goal, removed limitation, replaced workflow, operational benefit, or qualitative result as substantive evidence. Do not discard it merely because an implementation detail sounds more technical. When no trustworthy metric exists, use the supported qualitative outcome or a defensible scope proxy; never manufacture precision.
+
+Preserve one primary idea per bullet. A bullet does not need all six fields, and forcing them can obscure the accomplishment. Across a recent or target-relevant role, however, the selected bullets should collectively establish the product or user purpose and the strongest supported result. An architecture or decision-focused bullet may omit a repeated outcome when a nearby bullet clearly establishes the associated purpose and result.
+
+Record a deliberate reason whenever an important supported goal/problem or outcome is omitted: genuine duplication, disclosure restriction, space prioritization, or an intentionally decision-focused bullet whose related result is established nearby. Apply the same review to strong evidence units omitted entirely during selection. Historical accuracy, confidentiality, uncertainty, and source support still determine whether evidence is eligible for use.
+
+Prefer a supported accomplishment over a generic responsibility summary that serves the same target requirement. Keep a responsibility-summary bullet only when it supplies necessary role context that the surrounding accomplishments do not establish.
+
 Prefer a varied combination of:
 
 ```text
@@ -65,6 +95,8 @@ Risk + control + reliability or security outcome
 ```
 
 Important bullets should identify the service, component, model, platform, pipeline, migration, product flow, or engineering process. Include the technical method, constraint, or trade-off when it demonstrates judgment. Use an outcome without a number when no metric exists.
+
+Reject unexplained placeholders such as `major feature`, `key component`, and `various improvements`. A strong default shape is `Action + engineering object + method or decision + scope + outcome`, but omit unsupported components rather than forcing them.
 
 Match evidence to level:
 
@@ -116,6 +148,8 @@ Use employer-requested file formats. PDF is the default only when the employer d
 Before rendering, confirm:
 
 - every material claim maps to source IDs;
+- every recent or target-relevant bullet has been compared with the six evidence fields and carries one primary idea;
+- the combined bullets for each recent or target-relevant role preserve important supported purpose and outcome, or record a deliberate omission reason;
 - every explicit requirement appears in the requirement matrix;
 - titles, dates, technologies, ownership, metrics, and contact information are source-backed;
 - gaps remain gaps and inferred expectations stay labelled;
