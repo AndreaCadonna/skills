@@ -76,6 +76,13 @@ function visibleUrl(url) {
   return `\\url{${urlValue(url)}}`;
 }
 
+function compactUrlText(url) {
+  return String(url)
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/$/, "");
+}
+
 function dateRange(row) {
   const start = row.startDate || "";
   const end = row.endDate || (start ? "Present" : "");
@@ -107,17 +114,19 @@ function profileBlock(resume) {
   const links = basics.website.split(/\s+/).filter(Boolean).map((url) => ({
     label: "Website",
     url,
+    display: compactUrlText(url),
   }));
   const seen = new Set(links.map((link) => link.url));
   for (const profile of basics.profiles.slice(0, 3)) {
     if (profile.url && !seen.has(profile.url)) {
-      links.push({ label: profile.label || "Profile", url: profile.url });
+      const label = profile.label || "Profile";
+      links.push({ label, url: profile.url, display: label });
       seen.add(profile.url);
     }
   }
 
   return [
-    "\\begin{center}",
+    "\\begin{flushleft}",
     `  {\\fontsize{22}{25}\\selectfont\\bfseries ${escapeLatex(basics.name)}}\\par`,
     basics.label
       ? `  \\vspace{2pt}{\\fontsize{11.5}{14}\\selectfont\\bfseries ${escapeLatex(basics.label)}}\\par`
@@ -125,10 +134,12 @@ function profileBlock(resume) {
     contact.length
       ? `  \\vspace{3pt}{\\small ${contact.join(" \\enspace\\textbar\\enspace ")}}\\par`
       : "",
-    ...links.map((link) => (
-      `  {\\small\\textbf{${escapeLatex(link.label)}:} ${visibleUrl(link.url)}}\\par`
-    )),
-    "\\end{center}",
+    links.length
+      ? `  {\\small ${links.map((link) => (
+        `\\textbf{${escapeLatex(link.label)}:} \\href{${urlValue(link.url)}}{${escapeLatex(link.display)}}`
+      )).join(" \\enspace\\textbar\\enspace ")}}\\par`
+      : "",
+    "\\end{flushleft}",
     "\\vspace{-2pt}",
   ].filter(Boolean).join("\n");
 }
@@ -235,9 +246,12 @@ export function buildAtsTex(resume) {
     "\\usepackage[T1]{fontenc}",
     "\\usepackage[utf8]{inputenc}",
     "\\usepackage{lmodern}",
+    "\\usepackage{xcolor}",
     "\\usepackage[margin=0.65in]{geometry}",
     "\\usepackage{url}",
     "\\usepackage[hidelinks,unicode]{hyperref}",
+    "\\definecolor{sectionblue}{HTML}{1F4E79}",
+    "\\renewcommand{\\textbf}[1]{{\\fontfamily{lmss}\\fontseries{bx}\\selectfont #1}}",
     "\\input{glyphtounicode}",
     "\\pdfgentounicode=1",
     "\\pagestyle{empty}",
@@ -249,8 +263,8 @@ export function buildAtsTex(resume) {
     "  \\begin{itemize}\\setlength{\\itemsep}{1.5pt}\\setlength{\\topsep}{2pt}\\setlength{\\parsep}{0pt}\\setlength{\\partopsep}{0pt}%",
     "}{\\end{itemize}}",
     "\\newcommand{\\resumesection}[1]{%",
-    "  \\vspace{5pt}{\\fontsize{11.5}{13.5}\\selectfont\\bfseries\\MakeUppercase{#1}}\\par",
-    "  \\vspace{1pt}\\hrule\\vspace{3pt}%",
+    "  \\vspace{5pt}{\\color{sectionblue}\\fontsize{11.5}{13.5}\\selectfont\\bfseries\\MakeUppercase{#1}}\\par",
+    "  \\vspace{4pt}\\hrule\\vspace{4pt}%",
     "}",
     `\\hypersetup{pdfauthor={${escapeLatex(resume.basics.name)}},pdftitle={${escapeLatex(resume.basics.name)} - Resume}}`,
     "\\begin{document}",

@@ -62,7 +62,7 @@ Inputs without `renderer` remain valid and normalize to `renderer.kind: "resumak
 
 - `basics.name` is required. Optional fields are `label`, `email`, `phone`, `location.address`, `website`, and `profiles[]` with `label` and `url`.
 - `basics.label` is the target-facing headline rendered directly below the name. It must not replace historical job titles. Legacy `basics.headline` is accepted as an alias during migration.
-- The ATS renderer displays website values plus up to three selected profiles as labeled, visible URLs in the document body. Original Resumake templates receive only the first website or profile URL because that is the upstream contract.
+- The ATS renderer displays website values without their protocol plus up to three selected profiles as compact labeled links in the document body. Original Resumake templates receive only the first website or profile URL because that is the upstream contract.
 - Every `work[]` item requires `company`, `position`, and non-empty `highlights[]`. It may include `location`, `startDate`, and `endDate`. Legacy `name` is accepted as an alias for `company`.
 - Every `skills[]` item requires `name` and non-empty `keywords[]`.
 - Every `education[]` item requires `institution` and may include `location`, `studyType`, `area`, dates, and `score`. Legacy `gpa` is accepted as an alias for `score`.

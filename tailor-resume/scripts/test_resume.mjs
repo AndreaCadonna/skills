@@ -160,6 +160,12 @@ async function main() {
   assert.match(atsTex, /Full Stack Software Engineer/);
   assert.match(atsTex, /textbf\{LinkedIn:\}/);
   assert.match(atsTex, /textbf\{GitHub:\}/);
+  assert.match(atsTex, /definecolor\{sectionblue\}\{HTML\}\{1F4E79\}/);
+  assert.match(atsTex, /begin\{flushleft\}/);
+  assert.doesNotMatch(atsTex, /begin\{center\}/);
+  assert.match(atsTex, /vspace\{4pt\}\\hrule\\vspace\{4pt\}/);
+  assert.match(atsTex, /textbf\{Website:\}.*textbf\{LinkedIn:\}.*textbf\{GitHub:\}/);
+  assert.match(atsTex, /href\{https:\/\/social\.example\/alex\}\{LinkedIn\}/);
   assert.doesNotMatch(atsTex, /begin\{tabular\}/);
   assert.deepEqual(populatedSectionTitles(sampleReport.normalized), [
     "Profile", "Skills", "Work Experience", "Projects", "Education",

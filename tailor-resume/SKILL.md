@@ -95,7 +95,7 @@ node <skill-directory>/scripts/render_resumake.mjs --input <resume.json> --outpu
 
 Use `--template 1` through `--template 9` only to override JSON. Use `--overwrite` only when replacing an identified prior bundle is intended. Add `--tex-only` when source only is requested or the TeX engine is unavailable. Use the ReportLab renderer only when the user explicitly accepts a generic non-Resumake fallback.
 
-Review the ATS renderer's `qa.json` and `build.log`, then inspect every PDF page for clipping, wrapping, orphaned headings, split entries, hierarchy, whitespace, glyphs, visible URLs, and meaningful page use. Confirm there are no overfull TeX boxes, body text is at least 10.5 points, text is selectable, extracted text follows logical reading order, conventional headings survive extraction, URI annotations exist, and contact details are present in the body. Perform a rapid top-third scan for target role, level, relevant stack, strongest impact, and scale.
+Review the ATS renderer's `qa.json` and `build.log`, then inspect every PDF page for clipping, wrapping, orphaned headings, split entries, hierarchy, whitespace, glyphs, visible website and project URLs, compact profile labels, and meaningful page use. Confirm there are no overfull TeX boxes, body text is at least 10.5 points, text is selectable, extracted text follows logical reading order, conventional headings survive extraction, URI annotations exist, and contact details are present in the body. Perform a rapid top-third scan for target role, level, relevant stack, strongest impact, and scale.
 
 Use the shortest length that preserves differentiated evidence. Do not achieve a page target through unreadable typography or removal of essential proof.
 

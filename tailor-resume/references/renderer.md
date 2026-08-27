@@ -31,7 +31,7 @@ node <skill-directory>/scripts/render_ats_resume.mjs --input <resume.json> --out
 
 The command creates a `<bundle-name>/` directory containing normalized `resume.json`, professionally named TeX and PDF files, `build.log`, `qa.json`, and a provenance README. `renderer.documentBasename` controls the TeX/PDF filename independently of the bundle directory. Use `--tex-only` to skip compilation and `--overwrite` only to replace the exact existing bundle.
 
-The ATS layout is one column, uses 11-point body text by default, keeps contact details and up to three selected labeled links in the document body, renders skills as flowing paragraphs, and uses no tables, columns, text boxes, or graphics. It supports A4 and Letter page sizes.
+The ATS layout is one column, uses 11-point body text by default, and uses a compact left-aligned header. Location, email, and phone share one row; the website and up to three selected profiles share the next row when they fit. The website is shown without its protocol and profile names are compact clickable labels. Skills render as flowing paragraphs, section headings and rules use dark blue, and the source uses no tables, columns, text boxes, or graphics. It supports A4 and Letter page sizes.
 
 When a PDF is compiled, the renderer fails quality checks for overfull TeX boxes, more than two pages, missing selectable name/headline/contact text, missing or out-of-order section headings, Unicode replacement glyphs, or missing URI annotations. Review `qa.json` and `build.log`; mechanical checks do not replace visual inspection.
 

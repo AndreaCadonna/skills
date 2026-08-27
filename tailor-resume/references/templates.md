@@ -4,7 +4,7 @@ The skill provides one additive custom ATS renderer and vendors all nine origina
 
 ## ATS application mode
 
-Default to `renderer.kind: "ats"`. It produces the supported one-column, headline-aware, table-free application layout with 11-point body text by default. It is not an original Resumake template and must never be described as template 10.
+Default to `renderer.kind: "ats"`. It produces the supported one-column, headline-aware, table-free application layout with 11-point body text by default. The layout uses Latin Modern body text, sans-serif bold emphasis, dark-blue section headings and rules, generous heading spacing, and a compact left-aligned contact header. It is not an original Resumake template and must never be described as template 10.
 
 ## Portfolio mode
 
