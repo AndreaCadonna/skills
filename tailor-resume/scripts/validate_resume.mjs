@@ -67,6 +67,39 @@ function plainObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
 }
 
+function normalizeEmphasis(value) {
+  if (!plainObject(value)) return {};
+  return Object.fromEntries(Object.entries(value).map(([pathName, phrases]) => [
+    text(pathName),
+    arrayOrEmpty(phrases).map(text).filter(Boolean),
+  ]).filter(([pathName]) => pathName));
+}
+
+function emphasisTargets(resume) {
+  const targets = new Map();
+  const add = (pathName, value, allowWholeField = false) => {
+    if (text(value)) targets.set(pathName, { value: text(value), allowWholeField });
+  };
+  add("summary", resume.summary);
+  resume.skills.forEach((skill, index) => {
+    skill.keywords.forEach((keyword, keywordIndex) => {
+      add(`skills[${index}].keywords[${keywordIndex}]`, keyword, true);
+    });
+  });
+  resume.work.forEach((job, index) => {
+    job.highlights.forEach((highlight, bulletIndex) => {
+      add(`work[${index}].highlights[${bulletIndex}]`, highlight);
+    });
+  });
+  resume.projects.forEach((project, index) => {
+    add(`projects[${index}].description`, project.description);
+    project.highlights.forEach((highlight, bulletIndex) => {
+      add(`projects[${index}].highlights[${bulletIndex}]`, highlight);
+    });
+  });
+  return targets;
+}
+
 export function sanitizeDocumentBasename(value, fallback = "resume") {
   let name = text(value) || fallback;
   name = name.replace(/\.pdf$/i, "")
@@ -117,6 +150,7 @@ export function normalizeResume(input) {
   const basics = plainObject(input?.basics) ? input.basics : {};
   const strategy = plainObject(input?.strategy) ? input.strategy : {};
   const renderer = plainObject(input?.renderer) ? input.renderer : {};
+  const emphasis = normalizeEmphasis(input?.emphasis);
   const rawAwards = arrayOrEmpty(input?.awards);
   const legacySummaryIndex = rawAwards.findIndex((award) => (
     text(award?.summary)
@@ -148,6 +182,7 @@ export function normalizeResume(input) {
     sections: Array.isArray(input?.sections)
       ? [...input.sections]
       : [...DEFAULT_SECTIONS],
+    emphasis,
     basics: {
       name: text(basics.name),
       label: text(basics.label) || text(basics.headline),
@@ -223,7 +258,7 @@ export function validateResume(input) {
   if (input.sections !== undefined && !Array.isArray(input.sections)) {
     error("sections", "Expected an array.");
   }
-  for (const field of ["basics", "headings", "strategy", "renderer"]) {
+  for (const field of ["basics", "headings", "strategy", "renderer", "emphasis"]) {
     if (
       input[field] !== undefined
       && (!input[field] || typeof input[field] !== "object" || Array.isArray(input[field]))
@@ -281,6 +316,74 @@ export function validateResume(input) {
   }
   if (tailoredWorkflow && strategy.outputMode === "application" && resume.renderer.kind === "resumake") {
     warn("renderer.kind", "Original Resumake templates are not ATS-verified; this application copy requires explicit extraction-order review.");
+  }
+
+  const targets = emphasisTargets(resume);
+  if (plainObject(input.emphasis)) {
+    for (const [pathName, rawPhrases] of Object.entries(input.emphasis)) {
+      const field = `emphasis.${pathName}`;
+      if (!Array.isArray(rawPhrases)) {
+        error(field, "Expected an array of exact phrases.");
+        continue;
+      }
+      const target = targets.get(pathName);
+      if (!target) {
+        error(field, "Unknown or empty emphasis path.");
+        continue;
+      }
+      const phrases = rawPhrases.map(text).filter(Boolean);
+      if (!phrases.length || phrases.length > 3) {
+        error(field, "Use one to three non-empty emphasis phrases.");
+      }
+      const seen = new Set();
+      const spans = [];
+      phrases.forEach((phrase, index) => {
+        const phraseField = `${field}[${index}]`;
+        if (!phrase) {
+          error(phraseField, "Emphasis phrase must be non-empty.");
+          return;
+        }
+        if (phrase !== rawPhrases[index]) {
+          error(phraseField, "Do not use leading or trailing whitespace in an emphasis phrase.");
+        }
+        if (seen.has(phrase)) error(phraseField, "Duplicate emphasis phrase.");
+        seen.add(phrase);
+        const first = target.value.indexOf(phrase);
+        const last = target.value.lastIndexOf(phrase);
+        if (first < 0) {
+          error(phraseField, "Phrase does not occur in the target field with exact case.");
+          return;
+        }
+        if (first !== last) {
+          error(phraseField, "Phrase must occur exactly once in the target field.");
+          return;
+        }
+        if (!target.allowWholeField && phrase === target.value) {
+          error(phraseField, "Do not emphasize the entire field.");
+        }
+        spans.push({ start: first, end: first + phrase.length, phraseField });
+      });
+      spans.sort((left, right) => left.start - right.start);
+      for (let index = 1; index < spans.length; index += 1) {
+        if (spans[index].start < spans[index - 1].end) {
+          error(spans[index].phraseField, "Emphasis phrases may not overlap.");
+        }
+      }
+    }
+
+    const requiredBulletPaths = [
+      ...resume.work.flatMap((job, index) => (
+        job.highlights.map((_, bulletIndex) => `work[${index}].highlights[${bulletIndex}]`)
+      )),
+      ...resume.projects.flatMap((project, index) => (
+        project.highlights.map((_, bulletIndex) => `projects[${index}].highlights[${bulletIndex}]`)
+      )),
+    ];
+    requiredBulletPaths.forEach((pathName) => {
+      if (!resume.emphasis[pathName]?.length) {
+        error(`emphasis.${pathName}`, "Scan-emphasis mode requires one to three meaningful phrases for every retained bullet.");
+      }
+    });
   }
   if (!strategy.targetRole) {
     warn("strategy.targetRole", "Record the target role so positioning can be audited.");

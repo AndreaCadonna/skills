@@ -30,6 +30,10 @@ The UTF-8 contract remains compatible with original Resumake inputs while adding
     "projects": "Projects"
   },
   "sections": ["profile", "summary", "skills", "work", "projects", "education"],
+  "emphasis": {
+    "summary": ["distributed services"],
+    "work[0].highlights[0]": ["Go", "three product teams"]
+  },
   "basics": {},
   "summary": "",
   "work": [],
@@ -57,6 +61,22 @@ Inputs without `renderer` remain valid and normalize to `renderer.kind: "resumak
 - `outputMode`: `application` or `portfolio`.
 - `targetRole`, `roleFamily`, and `locale` are non-rendered strategy metadata.
 - `pageTarget`: `1`, `2`, or `null`. It guides inspection and never authorizes content removal or typography shrinkage.
+
+## Emphasis
+
+`emphasis` is an optional object used by the ATS renderer for reproducible scan-oriented bolding. Each key must be a populated textual resume path supported by the renderer:
+
+- `summary`;
+- `skills[n].keywords[m]`;
+- `work[n].highlights[m]`;
+- `projects[n].description`;
+- `projects[n].highlights[m]`.
+
+Each value is a non-empty array of one to three exact, case-sensitive phrases contained in that field. Phrases may not overlap, repeat, or include leading or trailing whitespace. A phrase may equal an entire skill keyword, but may not equal an entire summary, description, or bullet. The validator rejects unknown paths and phrases that do not occur exactly once.
+
+Keep the source text plain. Do not insert Markdown or LaTeX markup into resume strings. The ATS renderer escapes all source text and applies `\\textbf{}` only to validated emphasis spans. Original Resumake templates ignore the emphasis map and require an explicit warning when scan emphasis was requested.
+
+When scan emphasis is a user requirement, give every retained work and project bullet at least one meaningful emphasis span. Bold target-relevant technologies, engineering objects, controls, metrics, scope, and outcomes rather than generic verbs or status labels.
 
 ## Fields
 

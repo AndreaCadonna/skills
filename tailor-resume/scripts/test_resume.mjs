@@ -110,6 +110,31 @@ function sampleContentAudit() {
   };
 }
 
+function sampleChronologyAudit() {
+  return {
+    claimedExperience: "five years",
+    canonicalRoles: ["work-example-systems", "work-sample-software"],
+    includedRoles: ["work-example-systems", "work-sample-software"],
+    omittedRoles: [],
+    visibleTimelineSupportsClaim: true,
+    notes: "The two visible roles cover the public five-year experience claim.",
+  };
+}
+
+function sampleEmphasis() {
+  return {
+    summary: ["five years", "reliable web applications"],
+    "skills[0].keywords[0]": ["TypeScript"],
+    "skills[1].keywords[0]": ["React"],
+    "work[0].highlights[0]": ["TypeScript services", "three internal operations teams"],
+    "work[0].highlights[1]": ["cross-functional collaboration", "release quality"],
+    "work[0].highlights[2]": ["32%", "median page-load time"],
+    "work[1].highlights[0]": ["Node.js API features", "customer account management"],
+    "work[1].highlights[1]": ["PostgreSQL queries", "production support procedures"],
+    "projects[0].highlights[0]": ["selectable-text LaTeX PDFs", "without sending candidate data"],
+  };
+}
+
 async function main() {
   const sample = JSON.parse(await fs.readFile(SAMPLE_PATH, "utf8"));
   const skillText = await fs.readFile(path.join(SKILL_DIR, "SKILL.md"), "utf8");
@@ -171,6 +196,22 @@ async function main() {
     "Profile", "Skills", "Work Experience", "Projects", "Education",
   ]);
 
+  const emphasized = structuredClone(sample);
+  emphasized.emphasis = sampleEmphasis();
+  const emphasizedReport = validateResume(emphasized);
+  assert.equal(emphasizedReport.valid, true);
+  const emphasizedTex = buildAtsTex(emphasizedReport.normalized);
+  assert.match(emphasizedTex, /textbf\{TypeScript services\}/);
+  assert.match(emphasizedTex, /textbf\{TypeScript\}/);
+  assert.match(emphasizedTex, /textbf\{32\\%\}/);
+
+  const missingBulletEmphasis = structuredClone(emphasized);
+  delete missingBulletEmphasis.emphasis["work[1].highlights[1]"];
+  assert.equal(validateResume(missingBulletEmphasis).valid, false);
+  const invalidEmphasisPhrase = structuredClone(emphasized);
+  invalidEmphasisPhrase.emphasis["work[0].highlights[0]"] = ["Missing framework"];
+  assert.equal(validateResume(invalidEmphasisPhrase).valid, false);
+
   const claims = materialResumePaths(sample).map((resumePath) => ({
     path: resumePath,
     sourceIds: ["sample-source"],
@@ -196,9 +237,17 @@ async function main() {
 
   const contentAudited = structuredClone(audit);
   contentAudited.contentAudit = sampleContentAudit();
+  contentAudited.chronologyAudit = sampleChronologyAudit();
   const contentAuditedReport = auditApplication(sample, contentAudited);
   assert.equal(contentAuditedReport.valid, true);
   assert.deepEqual(contentAuditedReport.warnings, []);
+
+  const missingCanonicalRole = structuredClone(contentAudited);
+  missingCanonicalRole.chronologyAudit.includedRoles.pop();
+  assert.equal(auditApplication(sample, missingCanonicalRole).valid, false);
+  const unsupportedDuration = structuredClone(contentAudited);
+  unsupportedDuration.chronologyAudit.visibleTimelineSupportsClaim = false;
+  assert.equal(auditApplication(sample, unsupportedDuration).valid, false);
 
   const silentOutcomeDrop = structuredClone(contentAudited);
   silentOutcomeDrop.contentAudit.evidenceUnits[0].preservedFields = [

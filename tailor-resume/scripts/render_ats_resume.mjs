@@ -76,6 +76,24 @@ function visibleUrl(url) {
   return `\\url{${urlValue(url)}}`;
 }
 
+function emphasizedLatex(value, phrases = []) {
+  const source = String(value);
+  if (!phrases.length) return escapeLatex(source);
+  const spans = phrases.map((phrase) => ({
+    start: source.indexOf(phrase),
+    end: source.indexOf(phrase) + phrase.length,
+  })).sort((left, right) => left.start - right.start);
+  const output = [];
+  let cursor = 0;
+  for (const span of spans) {
+    output.push(escapeLatex(source.slice(cursor, span.start)));
+    output.push(`\\textbf{${escapeLatex(source.slice(span.start, span.end))}}`);
+    cursor = span.end;
+  }
+  output.push(escapeLatex(source.slice(cursor)));
+  return output.join("");
+}
+
 function compactUrlText(url) {
   return String(url)
     .replace(/^https?:\/\//i, "")
@@ -93,11 +111,14 @@ function sectionHeading(value) {
   return `\\Needspace{3\\baselineskip}\n\\resumesection{${escapeLatex(value)}}`;
 }
 
-function bulletList(items) {
+function bulletList(items, pathPrefix, resume) {
   if (!items.length) return "";
   return [
     "\\begin{resumeitemize}",
-    ...items.map((item) => `  \\item ${escapeLatex(item)}`),
+    ...items.map((item, index) => {
+      const pathName = `${pathPrefix}[${index}]`;
+      return `  \\item ${emphasizedLatex(item, resume.emphasis[pathName])}`;
+    }),
     "\\end{resumeitemize}",
   ].join("\n");
 }
@@ -147,15 +168,17 @@ function profileBlock(resume) {
 function summaryBlock(resume) {
   return [
     sectionHeading(resume.headings.summary),
-    escapeLatex(resume.summary),
+    emphasizedLatex(resume.summary, resume.emphasis.summary),
   ].join("\n");
 }
 
 function skillsBlock(resume) {
   return [
     sectionHeading(resume.headings.skills),
-    ...resume.skills.map((skill) => (
-      `\\textbf{${escapeLatex(skill.name)}:} ${skill.keywords.map(escapeLatex).join(", ")}\\par`
+    ...resume.skills.map((skill, index) => (
+      `\\textbf{${escapeLatex(skill.name)}:} ${skill.keywords.map((keyword, keywordIndex) => (
+        emphasizedLatex(keyword, resume.emphasis[`skills[${index}].keywords[${keywordIndex}]`])
+      )).join(", ")}\\par`
     )),
   ].join("\n");
 }
@@ -163,11 +186,11 @@ function skillsBlock(resume) {
 function workBlock(resume) {
   return [
     sectionHeading(resume.headings.work),
-    ...resume.work.map((job) => [
+    ...resume.work.map((job, index) => [
       "\\Needspace{5\\baselineskip}",
       `\\textbf{${escapeLatex(job.company)}} --- \\textit{${escapeLatex(job.position)}}\\par`,
       [job.location, dateRange(job)].filter(Boolean).map(escapeLatex).join(" \\enspace\\textbar\\enspace ") + "\\par",
-      bulletList(job.highlights),
+      bulletList(job.highlights, `work[${index}].highlights`, resume),
     ].join("\n")),
   ].join("\n");
 }
@@ -175,12 +198,14 @@ function workBlock(resume) {
 function projectsBlock(resume) {
   return [
     sectionHeading(resume.headings.projects),
-    ...resume.projects.map((project) => [
+    ...resume.projects.map((project, index) => [
       "\\Needspace{4\\baselineskip}",
       `\\textbf{${escapeLatex(project.name)}}${project.keywords.length ? ` --- \\textit{${project.keywords.map(escapeLatex).join(", ")}}` : ""}\\par`,
       project.url ? `\\textbf{Project link:} ${visibleUrl(project.url)}\\par` : "",
-      project.description ? `${escapeLatex(project.description)}\\par` : "",
-      bulletList(project.highlights),
+      project.description
+        ? `${emphasizedLatex(project.description, resume.emphasis[`projects[${index}].description`])}\\par`
+        : "",
+      bulletList(project.highlights, `projects[${index}].highlights`, resume),
     ].filter(Boolean).join("\n")),
   ].join("\n");
 }

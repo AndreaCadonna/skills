@@ -31,6 +31,8 @@ node <skill-directory>/scripts/render_ats_resume.mjs --input <resume.json> --out
 
 The command creates a `<bundle-name>/` directory containing normalized `resume.json`, professionally named TeX and PDF files, `build.log`, `qa.json`, and a provenance README. `renderer.documentBasename` controls the TeX/PDF filename independently of the bundle directory. Use `--tex-only` to skip compilation and `--overwrite` only to replace the exact existing bundle.
 
+The ATS renderer applies the validated `emphasis` map from `resume-input.json` after escaping source text. This keeps bold scan anchors reproducible and preserves plain text for auditing and extraction. Never edit generated TeX or PDF files to add content or emphasis; change the input and regenerate the bundle.
+
 The ATS layout is one column, uses 11-point body text by default, and uses a compact left-aligned header. Location, email, and phone share one row; the website and up to three selected profiles share the next row when they fit. The website is shown without its protocol and profile names are compact clickable labels. Skills render as flowing paragraphs, section headings and rules use dark blue, and the source uses no tables, columns, text boxes, or graphics. It supports A4 and Letter page sizes.
 
 When a PDF is compiled, the renderer fails quality checks for overfull TeX boxes, more than two pages, missing selectable name/headline/contact text, missing or out-of-order section headings, Unicode replacement glyphs, or missing URI annotations. Review `qa.json` and `build.log`; mechanical checks do not replace visual inspection.
@@ -73,8 +75,10 @@ For an ATS application copy, also:
 4. confirm the build log contains no overfull boxes;
 5. check dates remain attached to the correct roles and schools;
 6. confirm visible URLs retain URI annotations;
-7. perform a rapid top-third scan for target role, current level, relevant stack, strongest impact, and scale;
+7. perform a six-second top-third scan for target role, current level, relevant stack, strongest impact, scale, and material location or eligibility information;
 8. use one or two pages according to evidence strength without shrinking body text below 10.5 points.
+9. confirm that no page begins with unexplained continuation bullets whose role or project heading appears only on the previous page;
+10. when emphasis is requested, confirm that every retained bullet has a meaningful scan anchor and that the PDF can be reproduced from the unchanged input without post-render edits.
 
 The custom ATS renderer is the default application renderer. All original Resumake templates, including template 1, retain their upstream layout and typography; a visually correct Resumake PDF still requires an explicit parsing-risk warning and careful extraction review.
 

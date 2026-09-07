@@ -55,6 +55,12 @@ Choose the order that exposes the strongest target evidence while preserving chr
 
 Treat these as defaults, not rigid templates. Keep reverse chronology inside the experience section. Do not use a purely functional resume to hide dates or employers.
 
+### Career-history completeness
+
+Inventory the canonical professional chronology before selecting content. Keep every role needed to substantiate a duration claim or prevent a misleading gap. Compress an older or less relevant role to one line or one bullet before omitting it. Record every omitted role and the concrete reason in the application audit, and confirm that the visible dates still support the headline and summary.
+
+Do not let a total software-experience duration read as a duration in a newer specialization. Reconcile every `N+ years` statement against the work dates visible in the application copy.
+
 ## Headline and summary
 
 - Put a concise target identity beneath the name, such as `Backend Software Engineer | Distributed Systems and Go`.
@@ -80,6 +86,8 @@ Treat a user goal, removed limitation, replaced workflow, operational benefit, o
 
 Preserve one primary idea per bullet. A bullet does not need all six fields, and forcing them can obscure the accomplishment. Across a recent or target-relevant role, however, the selected bullets should collectively establish the product or user purpose and the strongest supported result. An architecture or decision-focused bullet may omit a repeated outcome when a nearby bullet clearly establishes the associated purpose and result.
 
+Preserve supported technical substance as well as purpose and impact. For each major recent or target-relevant role, the combined bullets should normally contain at least two system-specific technical methods when evidence permits, such as a language, framework, API, data store, infrastructure mechanism, testing strategy, or consequential design decision. A role-level technology list is not sufficient proof that a technology belongs in a particular bullet; bind the stack to the engineering object before using it. If that binding is absent and materially affects target fit, ask the candidate instead of omitting the stack or inferring it.
+
 Record a deliberate reason whenever an important supported goal/problem or outcome is omitted: genuine duplication, disclosure restriction, space prioritization, or an intentionally decision-focused bullet whose related result is established nearby. Apply the same review to strong evidence units omitted entirely during selection. Historical accuracy, confidentiality, uncertainty, and source support still determine whether evidence is eligible for use.
 
 Prefer a supported accomplishment over a generic responsibility summary that serves the same target requirement. Keep a responsibility-summary bullet only when it supplies necessary role context that the surrounding accomplishments do not establish.
@@ -95,6 +103,8 @@ Risk + control + reliability or security outcome
 ```
 
 Important bullets should identify the service, component, model, platform, pipeline, migration, product flow, or engineering process. Include the technical method, constraint, or trade-off when it demonstrates judgment. Use an outcome without a number when no metric exists.
+
+Do not join unrelated evidence merely to preserve space. Delivery speed, mentoring, organizational representation, and separate product outcomes require separate bullets unless one is clearly supporting context for the bullet's single primary idea. A semicolon does not make unrelated accomplishments one idea.
 
 Reject unexplained placeholders such as `major feature`, `key component`, and `various improvements`. A strong default shape is `Action + engineering object + method or decision + scope + outcome`, but omit unsupported components rather than forcing them.
 
@@ -114,10 +124,21 @@ Use two to five high-signal bullets for a recent important role. Compress less r
 - Remove obsolete, beginner-only, duplicated, or weakly remembered tools.
 - Demonstrate communication, collaboration, ownership, and mentoring through behavior rather than soft-skill labels.
 - Separate professional evidence from explicit learning interests.
+- Keep proficiency treatment consistent across the headline, summary, skills, work, and projects. A technology classified below `core-current` must not appear as an unqualified headline specialization.
 
 For a project, show the problem or user, architecture or difficult decision, testing/deployment, and verified adoption, performance, accuracy, or scope. Prioritize projects for students, juniors, career changers, and candidates entering a specialty without equivalent professional evidence. Senior candidates should include only unusually relevant projects or external work.
 
 Include LinkedIn, GitHub, portfolios, publications, or demos only when polished, consistent with the resume, and relevant. Do not expose repositories with secrets or contradictory claims.
+
+Select each project to close a high-priority requirement that professional work does not demonstrate more strongly. Record that purpose in the requirement matrix or evidence audit. Order projects by target relevance and preserve honest maturity labels such as prototype, working MVP, deployed project, maintained tool, or production-operated system.
+
+## Scan emphasis
+
+When the user requests scan-oriented bolding, represent it in the resume input's structured `emphasis` map. Give each retained accomplishment bullet one to three meaningful emphasis spans. Favor target-relevant languages, frameworks, APIs, tools, concrete engineering objects, architecture patterns, metrics, scope, outcomes, and reliability, security, or evaluation controls.
+
+Prioritize emphasis in this order when the evidence is available: engineering object; target-relevant language or framework; architecture, reliability, security, or evaluation mechanism; measured outcome or scope. Avoid spending limited emphasis on generic ownership language when a concrete technology, system, control, or result is available in the same bullet.
+
+Do not bold generic verbs, generic status values, or irrelevant technology merely to satisfy a formatting rule. If a bullet contains no phrase worth emphasizing for the target role, rewrite it with supported context or remove it. Emphasis should direct attention to evidence rather than turn the page into a keyword field.
 
 ## Compression and page strategy
 
@@ -149,6 +170,8 @@ Before rendering, confirm:
 
 - every material claim maps to source IDs;
 - every recent or target-relevant bullet has been compared with the six evidence fields and carries one primary idea;
+- system-specific technologies are preserved in recent and target-relevant experience when supported, and no bullet inherits technologies only from a role-level inventory;
+- each major recent or target-relevant role demonstrates concrete technical methods across its bullets when the evidence permits;
 - the combined bullets for each recent or target-relevant role preserve important supported purpose and outcome, or record a deliberate omission reason;
 - every explicit requirement appears in the requirement matrix;
 - titles, dates, technologies, ownership, metrics, and contact information are source-backed;
@@ -156,5 +179,10 @@ Before rendering, confirm:
 - target terminology reads naturally;
 - section order matches the career-stage strategy;
 - the top third communicates role, level, stack, impact, and scale;
+- a six-second scan of the first visible screen also surfaces one differentiated result or scope signal and any material location or eligibility information;
+- the visible work chronology supports every experience-duration claim and every omitted role has an audited reason;
+- proficiency wording is consistent across the headline, summary, skills, work, and projects;
+- requested emphasis is reproducible from the resume input and every emphasized phrase is supported and materially useful;
+- current or regenerated applications use `contentAudit` exactly and do not rely on the legacy compatibility warning;
 - verb tense, spelling, capitalization, and technology names are consistent;
 - every line increases confidence that the candidate can perform the target job.

@@ -329,6 +329,81 @@ function validateContentAudit({ resume, auditInput, materialPaths, claimSources,
   }
 }
 
+function validateChronologyAudit({ resume, auditInput, error, warn }) {
+  const chronology = auditInput.chronologyAudit;
+  if (chronology === undefined) {
+    warn(
+      "chronologyAudit",
+      "Add the career-history reconciliation audit for new tailored drafts; legacy maps remain valid.",
+    );
+    return;
+  }
+  if (!plainObject(chronology)) {
+    error("chronologyAudit", "Expected an object.");
+    return;
+  }
+
+  const canonicalRoles = strings(chronology.canonicalRoles);
+  const includedRoles = strings(chronology.includedRoles);
+  const omittedRoles = Array.isArray(chronology.omittedRoles) ? chronology.omittedRoles : [];
+  if (!Array.isArray(chronology.canonicalRoles)) error("chronologyAudit.canonicalRoles", "Expected an array.");
+  if (!Array.isArray(chronology.includedRoles)) error("chronologyAudit.includedRoles", "Expected an array.");
+  if (!Array.isArray(chronology.omittedRoles)) error("chronologyAudit.omittedRoles", "Expected an array.");
+
+  const canonical = new Set();
+  canonicalRoles.forEach((roleId, index) => {
+    if (canonical.has(roleId)) error(`chronologyAudit.canonicalRoles[${index}]`, "Canonical role IDs must be unique.");
+    canonical.add(roleId);
+  });
+  const included = new Set();
+  includedRoles.forEach((roleId, index) => {
+    if (included.has(roleId)) error(`chronologyAudit.includedRoles[${index}]`, "Included role IDs must be unique.");
+    included.add(roleId);
+    if (!canonical.has(roleId)) error(`chronologyAudit.includedRoles[${index}]`, `Unknown canonical role ID: ${roleId}`);
+  });
+  if (includedRoles.length !== resume.work.length) {
+    error(
+      "chronologyAudit.includedRoles",
+      `Record exactly one canonical role ID for each of the ${resume.work.length} visible work entries.`,
+    );
+  }
+
+  const omitted = new Set();
+  omittedRoles.forEach((row, index) => {
+    const base = `chronologyAudit.omittedRoles[${index}]`;
+    if (!plainObject(row)) {
+      error(base, "Expected an omission object.");
+      return;
+    }
+    const roleId = text(row.roleId);
+    if (!roleId) error(`${base}.roleId`, "Canonical role ID is required.");
+    else if (!canonical.has(roleId)) error(`${base}.roleId`, `Unknown canonical role ID: ${roleId}`);
+    else if (included.has(roleId)) error(`${base}.roleId`, "A role cannot be both included and omitted.");
+    else if (omitted.has(roleId)) error(`${base}.roleId`, "Omitted role IDs must be unique.");
+    omitted.add(roleId);
+    if (!text(row.reason)) error(`${base}.reason`, "Explain why this canonical role is absent from the resume.");
+  });
+
+  const unaccounted = canonicalRoles.filter((roleId) => !included.has(roleId) && !omitted.has(roleId));
+  if (unaccounted.length) {
+    error("chronologyAudit", `Every canonical role must be included or omitted with a reason: ${unaccounted.join(", ")}`);
+  }
+  const claimedExperience = text(chronology.claimedExperience);
+  if (claimedExperience && chronology.visibleTimelineSupportsClaim !== true) {
+    error(
+      "chronologyAudit.visibleTimelineSupportsClaim",
+      "A public experience-duration claim requires explicit confirmation that the visible chronology supports it.",
+    );
+  }
+  if (chronology.visibleTimelineSupportsClaim !== undefined
+    && typeof chronology.visibleTimelineSupportsClaim !== "boolean") {
+    error("chronologyAudit.visibleTimelineSupportsClaim", "Use true or false.");
+  }
+  if ((claimedExperience || omittedRoles.length) && !text(chronology.notes)) {
+    error("chronologyAudit.notes", "Explain the duration reconciliation and any role omissions.");
+  }
+}
+
 export function materialResumePaths(resumeInput) {
   const resume = normalizeResume(resumeInput);
   const selected = new Set(resume.sections);
@@ -461,6 +536,7 @@ export function auditApplication(resumeInput, auditInput) {
   }
 
   validateContentAudit({ resume, auditInput, materialPaths, claimSources, error, warn });
+  validateChronologyAudit({ resume, auditInput, error, warn });
 
   return { valid: errors.length === 0, errors, warnings };
 }

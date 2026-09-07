@@ -52,6 +52,14 @@ Use a private JSON sidecar to prove that a tailored resume remains traceable to 
       "coverageDecision": "sufficient",
       "notes": "The role preserves product purpose, ownership, scope, and outcome without repeating them in every bullet."
     }]
+  },
+  "chronologyAudit": {
+    "claimedExperience": "5+ years",
+    "canonicalRoles": ["work-example", "work-earlier"],
+    "includedRoles": ["work-example", "work-earlier"],
+    "omittedRoles": [],
+    "visibleTimelineSupportsClaim": true,
+    "notes": "The visible chronology supports the public duration claim."
   }
 }
 ```
@@ -69,9 +77,24 @@ Use a private JSON sidecar to prove that a tailored resume remains traceable to 
 - For a claimed or demonstrated requirement, its requirement source IDs must overlap the claim source IDs at each referenced resume path.
 - Resolve conflicting source facts before drafting. Do not let multiple sources silently justify inconsistent dates, titles, technologies, or metrics.
 
+## Chronology audit
+
+Add `chronologyAudit` to every new tailored application:
+
+- `claimedExperience`: the public duration claim, or an empty string when none is used;
+- `canonicalRoles`: stable source IDs for every professional role in the canonical candidate source;
+- `includedRoles`: canonical role IDs represented in the resume;
+- `omittedRoles`: objects with `roleId` and a concrete `reason`;
+- `visibleTimelineSupportsClaim`: `true` only after reconciling the public claim with the displayed work dates;
+- `notes`: a concise explanation of the reconciliation.
+
+Every canonical role must be included or listed exactly once as omitted. An omission is invalid when it creates a misleading gap or removes dates required to substantiate the public duration claim. The audit fails when a duration claim exists and `visibleTimelineSupportsClaim` is not `true`.
+
 ## Semantic content-selection audit
 
 Add `contentAudit` to new tailored applications. Older sidecars without it remain valid for compatibility but produce a migration warning; they prove traceability only, not drafting-quality coverage.
+
+Use the property name `contentAudit` exactly. Do not store a current semantic audit under `contentAuditLegacy` or another alias. Legacy compatibility exists only so old applications can be inspected; any application newly drafted, rewritten, or regenerated under the current workflow must migrate to `contentAudit` before delivery.
 
 ### Evidence units
 
@@ -85,6 +108,8 @@ Create an evidence unit for each high-value accomplishment or decision considere
 - `outcome`: user, operational, product, reliability, quality, or organizational result.
 
 Use a supported string or `null` for every key. A qualitative result and a scope proxy are valid evidence; a metric is not required. `sourceIds` remain the authority for truth, confidence, uncertainty, history, and disclosure decisions.
+
+Record technologies inside `methodDecision` only when the source binds them to that evidence unit. Do not copy a role-level stack into every unit. For a major recent or target-relevant role, the selected evidence units should normally preserve system-specific technical methods in at least two bullets when such evidence exists; explain a deliberate exception in the role audit notes.
 
 Use `resumePaths` for bullets that carry the evidence unit and list the fields semantically retained in `preservedFields`. Each evidence unit must share at least one source ID with the claim record at every referenced bullet path. Do not infer preservation from verbs, percentages, or other keywords. The agent must compare the proposed bullet with the cited source evidence.
 
@@ -127,4 +152,4 @@ Add one `roleAudits` record for every work entry. Mark recent or target-relevant
 node <skill-directory>/scripts/audit_application.mjs <resume.json> <application-audit.json>
 ```
 
-An audit success means the sidecar covers the material resume paths and its classifications are internally consistent. With `contentAudit`, it also means omission decisions and recent-role coverage have been recorded consistently. It does not prove that a source document is true or that a preservation judgment is semantically correct; the agent must inspect the cited sources and proposed bullets.
+An audit success means the sidecar covers the material resume paths and its classifications are internally consistent. With `contentAudit`, it also means omission decisions and recent-role coverage have been recorded consistently. With `chronologyAudit`, it confirms that every canonical role is accounted for and the author explicitly reconciled any public duration claim. It does not prove that a source document is true or that a preservation judgment is semantically correct; the agent must inspect the cited sources and proposed bullets.
