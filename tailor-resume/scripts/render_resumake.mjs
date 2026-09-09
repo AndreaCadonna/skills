@@ -140,6 +140,13 @@ export function injectHeadline(tex, template, headline) {
 
 export function toResumakeValues(input) {
   const normalized = normalizeResume(input);
+  if (
+    Object.keys(normalized.emphasis).length
+    || normalized.emphasisPolicy.maxPhrasesPerField !== null
+    || normalized.emphasisPolicy.requireAllBullets
+  ) {
+    throw new Error("Inline emphasis requires renderer.kind ats; original Resumake templates do not support it.");
+  }
   const websites = normalized.basics.website.split(/\s+/).filter(Boolean);
   const primaryWebsite = websites[0] || normalized.basics.profiles.find((profile) => profile.url)?.url || "";
   const sections = [];

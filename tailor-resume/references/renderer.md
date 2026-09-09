@@ -33,6 +33,8 @@ The command creates a `<bundle-name>/` directory containing normalized `resume.j
 
 The ATS renderer applies the validated `emphasis` map from `resume-input.json` after escaping source text. This keeps bold scan anchors reproducible and preserves plain text for auditing and extraction. Never edit generated TeX or PDF files to add content or emphasis; change the input and regenerate the bundle.
 
+The emphasis map is selective by default. Use the optional `emphasisPolicy` settings when a local workflow must cap phrases per field or require an anchor in every rendered bullet.
+
 The ATS layout is one column, uses 11-point body text by default, and uses a compact left-aligned header. Location, email, and phone share one row; the website and up to three selected profiles share the next row when they fit. The website is shown without its protocol and profile names are compact clickable labels. Skills render as flowing paragraphs, section headings and rules use dark blue, and the source uses no tables, columns, text boxes, or graphics. It supports A4 and Letter page sizes.
 
 When a PDF is compiled, the renderer fails quality checks for overfull TeX boxes, more than two pages, missing selectable name/headline/contact text, missing or out-of-order section headings, Unicode replacement glyphs, or missing URI annotations. Review `qa.json` and `build.log`; mechanical checks do not replace visual inspection.
@@ -48,6 +50,8 @@ node <skill-directory>/scripts/render_resumake.mjs --input <resume.json> --outpu
 The renderer creates a self-contained `<company-role>/` bundle containing normalized `resume.json`, generated `resume.tex`, required template files and fonts, `build.log`, and a PDF. It refuses to replace an existing bundle unless `--overwrite` is present. When `renderer.documentBasename` is supplied, the compiled PDF uses that professional name; otherwise legacy `resume.pdf` naming is retained.
 
 Use `--template 1` through `--template 9` to override `selectedTemplate`. Use `--tex-only` to generate the complete source bundle without invoking a TeX engine. Input strings are treated as plain text and LaTeX control characters are escaped. Compilation explicitly disables shell escape.
+
+Original Resumake templates do not support the ATS emphasis map. Validation and direct Resumake conversion reject a non-empty map or active emphasis policy with a clear renderer-selection error.
 
 If the requested engine is absent or cannot initialize, keep the source bundle, report the missing engine, and do not claim that a PDF was produced. The bundle can be compiled on another machine or uploaded to a compatible LaTeX editor.
 

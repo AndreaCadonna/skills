@@ -71,15 +71,15 @@ Write renderer input and the evidence sidecar as UTF-8 JSON. Run structural and 
 node <skill-directory>/scripts/validate_resume.mjs <resume.json>
 ```
 
-When an evidence sidecar is available, run:
+For every new or regenerated application, run the evidence audit in strict local-source mode with each explicitly selected candidate Markdown source:
 
 ```text
-node <skill-directory>/scripts/audit_application.mjs <resume.json> <application-audit.json>
+node <skill-directory>/scripts/audit_application.mjs <resume.json> <application-audit.json> --source <candidate.md> [--source <additional.md> ...]
 ```
 
-Resolve every error. Review warnings against the tailoring policy instead of suppressing them mechanically, including legacy sidecars without `contentAudit`, prominent skills that are not demonstrated in context, and responsibility summaries that displace stronger accomplishments. A legacy-content-audit warning is acceptable only for a genuinely old application that is being inspected without regeneration; it is not acceptable for a new or regenerated application. Do not describe schema validation alone as proof that resume claims are supported or that impact evidence was preserved. Do not render or deliver while either validator reports `valid: false`. After any role, project, bullet, skill, or section change, update the sidecar and rerun both checks so stale paths cannot survive compression.
+Strict mode requires source resolution, value-bound claim rows with public confidence and disclosure metadata, selected-skill proficiency evidence, `contentAudit`, and `chronologyAudit`. Use `--legacy` only to inspect a genuinely old application without regenerating or delivering it; a legacy report is visibly incomplete and is never current-workflow approval. Resolve every error. Review warnings against the tailoring policy instead of suppressing them mechanically, including prominent skills that are not demonstrated in context and responsibility summaries that displace stronger accomplishments. Do not describe schema validation or source-marker existence as proof that resume claims are supported or that impact evidence was preserved. Do not render or deliver while either validator reports `valid: false`. After any role, project, bullet, skill, or section change, update the sidecar and rerun both checks so value bindings expose stale paths after compression or reordering.
 
-Completion criterion: schema validation succeeds, the evidence audit succeeds when applicable, semantic content-selection coverage is complete for new tailored drafts, and warnings are corrected or intentionally accepted.
+Completion criterion: schema validation and the strict evidence audit succeed, semantic content-selection and chronology coverage are complete, and warnings are corrected or intentionally accepted.
 
 ## 6. Render and inspect
 
@@ -105,7 +105,7 @@ node <skill-directory>/scripts/render_resumake.mjs --input <resume.json> --outpu
 
 Use `--template 1` through `--template 9` only to override JSON. Use `--overwrite` only when replacing an identified prior bundle is intended. Add `--tex-only` when source only is requested or the TeX engine is unavailable. Use the ReportLab renderer only when the user explicitly accepts a generic non-Resumake fallback.
 
-Review the ATS renderer's `qa.json` and `build.log`, then inspect every PDF page for clipping, wrapping, orphaned headings, split entries, hierarchy, whitespace, glyphs, visible website and project URLs, compact profile labels, and meaningful page use. Confirm there are no overfull TeX boxes, body text is at least 10.5 points, text is selectable, extracted text follows logical reading order, conventional headings survive extraction, URI annotations exist, and contact details are present in the body. Perform a six-second top-third scan for target role, level, relevant stack, strongest impact, scale, and material location or eligibility information. Avoid beginning a page with continuation bullets whose role or project heading appears only on the previous page.
+Review the ATS renderer's `qa.json` and `build.log`, then inspect every PDF page for clipping, wrapping, orphaned headings, split entries, hierarchy, whitespace, glyphs, visible website and project URLs, compact profile labels, and meaningful page use. Confirm there are no overfull TeX boxes, body text is at least 10.5 points, text is selectable, extracted text follows logical reading order, conventional headings survive extraction, URI annotations exist, and contact details are present in the body. Perform a six-second top-third scan for target role, level, relevant stack, strongest impact, scale, and material location or eligibility information. Avoid beginning a page with continuation bullets whose role or project heading appears only on the previous page. At the final editorial checkpoint, keep the profile and skills brief, express soft skills through behavior, verify one supported causal chain per bullet, bind each technology to its system, and confirm every bold span highlights meaningful target evidence.
 
 Use the shortest length that preserves differentiated evidence. Do not achieve a page target through unreadable typography or removal of essential proof.
 

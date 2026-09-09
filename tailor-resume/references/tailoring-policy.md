@@ -134,7 +134,9 @@ Select each project to close a high-priority requirement that professional work 
 
 ## Scan emphasis
 
-When the user requests scan-oriented bolding, represent it in the resume input's structured `emphasis` map. Give each retained accomplishment bullet one to three meaningful emphasis spans. Favor target-relevant languages, frameworks, APIs, tools, concrete engineering objects, architecture patterns, metrics, scope, outcomes, and reliability, security, or evaluation controls.
+When the user requests scan-oriented bolding, represent it in the resume input's structured `emphasis` map. Favor target-relevant languages, frameworks, APIs, tools, concrete engineering objects, architecture patterns, metrics, scope, outcomes, and reliability, security, or evaluation controls.
+
+Keep phrase-count and bullet-coverage rules local to the calling workflow. Set `emphasisPolicy.maxPhrasesPerField` and `emphasisPolicy.requireAllBullets` when those rules need mechanical enforcement. Without an active policy, selective emphasis is valid.
 
 Prioritize emphasis in this order when the evidence is available: engineering object; target-relevant language or framework; architecture, reliability, security, or evaluation mechanism; measured outcome or scope. Avoid spending limited emphasis on generic ownership language when a concrete technology, system, control, or result is available in the same bullet.
 

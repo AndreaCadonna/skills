@@ -18,7 +18,10 @@ Use a private JSON sidecar to prove that a tailored resume remains traceable to 
   }],
   "claims": [{
     "path": "work[0].highlights[0]",
-    "sourceIds": ["work-example-service"]
+    "value": "Replaced a recurring manual release workflow with a queued deployment service used by three product teams.",
+    "sourceIds": ["work-example-service"],
+    "confidence": "high",
+    "disclosure": "public-safe"
   }],
   "contentAudit": {
     "version": 1,
@@ -73,13 +76,40 @@ Use a private JSON sidecar to prove that a tailored resume remains traceable to 
 - Give claimed or demonstrated requirements at least one resume path.
 - Use one claim record for every material path: headline, summary, immutable employment and education facts, bullets, skills, projects, awards, metrics, and contact information.
 - Point `path` at the normalized resume JSON, for example `basics.label`, `skills[0].keywords[1]`, or `projects[0].highlights[0]`.
+- In a strict audit, copy the current normalized resume string into `value`. This binds the evidence decision to the content at that path and makes a reordered or edited field fail until the sidecar is updated.
+- Give every public claim `confidence` of `high`, `medium`, or `low`. Strict mode rejects `low`; confirm or omit that claim rather than upgrading it in the sidecar.
+- Give every public claim a disclosure value from the mapping below. Strict mode rejects private and unresolved evidence. Generalized evidence also requires `publicWordingReviewed: true` after reviewing that the actual public wording removes the sensitive detail without changing the claim. The agent may record this editorial review when the source disclosure boundary permits generalization; unresolved permission or disclosure requires user clarification.
 - Cover material fields in selected sections. Populated data intentionally omitted from `sections` is not a rendered claim.
 - For a claimed or demonstrated requirement, its requirement source IDs must overlap the claim source IDs at each referenced resume path.
 - Resolve conflicting source facts before drafting. Do not let multiple sources silently justify inconsistent dates, titles, technologies, or metrics.
 
+### Disclosure mapping
+
+The audit accepts the canonical values in the first column and their older ledger equivalents in the second. Both names have the same safety behavior.
+
+| Audit value | Older ledger value | Public-claim treatment |
+|---|---|---|
+| `public-safe` | `public` | Allowed |
+| `generalize-before-use` | `generalized` | Allowed only with `publicWordingReviewed: true` |
+| `private` | `confidential` | Rejected |
+| `unverified` | `ask` | Rejected until confirmed |
+
+Marker existence and metadata completeness do not establish that a claim is true or that generalized wording is safe. Compare the claim with the marked source block and its nested confidence, attribution, status, metric, maturity, and disclosure limits.
+
+### Selected skill claims
+
+For each `skills[n].keywords[m]` claim, record:
+
+- `proficiencyClass`: `core-current`, `working-familiarity`, `previous-professional`, `project-only`, or `experimental`;
+- `recency`: a supported date, range, or `current` statement;
+- `evidenceContext`: `professional`, `project`, `education`, or `mixed`;
+- `qualification`: the visible phrase used for a non-core skill, such as `Working Knowledge`, `Previous Professional Experience`, or `Project Experience`.
+
+Strict mode rejects experimental skills in the primary skills section. It also requires the non-core `qualification` to appear in the rendered skill category or keyword. The audit never infers proficiency from a technology name, source marker, or repeated keyword.
+
 ## Chronology audit
 
-Add `chronologyAudit` to every new tailored application:
+Add `chronologyAudit` to every new tailored application. `includedRoles` aligns one-to-one with `work[]` in rendered order:
 
 - `claimedExperience`: the public duration claim, or an empty string when none is used;
 - `canonicalRoles`: stable source IDs for every professional role in the canonical candidate source;
@@ -146,10 +176,32 @@ The audit warns when a `responsibility-summary` bullet remains even though stron
 
 Add one `roleAudits` record for every work entry. Mark recent or target-relevant roles `true` and use `sufficient` when the combined bullets preserve important supported purpose and outcome. A decision-focused bullet may omit a repeated result when another bullet in the same role establishes it. Use `deliberate-omission` with notes when combined role coverage intentionally omits all important supported goal/problem or outcome evidence. Mark other roles `false` with `not-applicable`.
 
-## Run
+## Source resolution and run
+
+Strict mode reads only the local Markdown paths supplied on the command line. It indexes standalone canonical markers in the exact form `<!-- source-id: lowercase-kebab-case -->`, ignores examples inside fenced code or prose, and fails on a source with no valid markers, malformed standalone marker comments, duplicate IDs, or referenced IDs that are absent. It resolves references in requirements, claims, content evidence units, and all chronology role lists. It never opens paths found inside resume or audit content and never fetches sources.
+
+Run strict mode for every new or regenerated application. Repeat `--source` when the evidence comes from more than one explicitly approved local Markdown file:
 
 ```text
-node <skill-directory>/scripts/audit_application.mjs <resume.json> <application-audit.json>
+node <skill-directory>/scripts/audit_application.mjs <resume.json> <application-audit.json> --source <candidate.md> [--source <additional.md> ...]
 ```
 
-An audit success means the sidecar covers the material resume paths and its classifications are internally consistent. With `contentAudit`, it also means omission decisions and recent-role coverage have been recorded consistently. With `chronologyAudit`, it confirms that every canonical role is accounted for and the author explicitly reconciled any public duration claim. It does not prove that a source document is true or that a preservation judgment is semantically correct; the agent must inspect the cited sources and proposed bullets.
+The callable equivalent is:
+
+```js
+const report = await auditApplicationWithSources(resume, audit, [candidateMarkdownPath]);
+```
+
+`auditApplication(resume, audit, { mode: "strict", sourceDocuments: [{ name, content }] })` is available when the caller already holds explicitly selected Markdown text. The caller, not the audit, chooses those sources.
+
+Use legacy inspection only for an old sidecar that will not be regenerated or delivered:
+
+```text
+node <skill-directory>/scripts/audit_application.mjs <resume.json> <application-audit.json> --legacy
+```
+
+Legacy reports return `mode: "legacy"` and a prominent warning. They do not resolve source IDs, require current claim metadata, or require `contentAudit` and `chronologyAudit`.
+
+A strict audit success means the sidecar covers and value-binds the material resume paths, every referenced ID exists once in the supplied source registry, claim metadata is publicly eligible, selected skills preserve proficiency treatment, and the current `contentAudit` and `chronologyAudit` are internally consistent. Chronology success records an editorial and source review against the visible work dates; it does not calculate or certify a duration. No mechanical audit proves that a source statement is true, that a marker is the right semantic evidence, that one causal chain is accurate, or that generalized wording is safe.
+
+Before rendering, complete the editorial checkpoint the script cannot judge: keep the profile and skill list brief, show soft skills through behavior, keep one supported causal chain per bullet, attribute technologies to the named system rather than a role-wide stack, and confirm each bold span highlights meaningful evidence.

@@ -75,28 +75,43 @@ function normalizeEmphasis(value) {
   ]).filter(([pathName]) => pathName));
 }
 
+function normalizeEmphasisPolicy(value) {
+  const policy = plainObject(value) ? value : {};
+  return {
+    maxPhrasesPerField: policy.maxPhrasesPerField ?? null,
+    requireAllBullets: policy.requireAllBullets ?? false,
+  };
+}
+
 function emphasisTargets(resume) {
   const targets = new Map();
+  const selected = new Set(resume.sections);
   const add = (pathName, value, allowWholeField = false) => {
     if (text(value)) targets.set(pathName, { value: text(value), allowWholeField });
   };
-  add("summary", resume.summary);
-  resume.skills.forEach((skill, index) => {
-    skill.keywords.forEach((keyword, keywordIndex) => {
-      add(`skills[${index}].keywords[${keywordIndex}]`, keyword, true);
+  if (selected.has("summary")) add("summary", resume.summary);
+  if (selected.has("skills")) {
+    resume.skills.forEach((skill, index) => {
+      skill.keywords.forEach((keyword, keywordIndex) => {
+        add(`skills[${index}].keywords[${keywordIndex}]`, keyword, true);
+      });
     });
-  });
-  resume.work.forEach((job, index) => {
-    job.highlights.forEach((highlight, bulletIndex) => {
-      add(`work[${index}].highlights[${bulletIndex}]`, highlight);
+  }
+  if (selected.has("work")) {
+    resume.work.forEach((job, index) => {
+      job.highlights.forEach((highlight, bulletIndex) => {
+        add(`work[${index}].highlights[${bulletIndex}]`, highlight);
+      });
     });
-  });
-  resume.projects.forEach((project, index) => {
-    add(`projects[${index}].description`, project.description);
-    project.highlights.forEach((highlight, bulletIndex) => {
-      add(`projects[${index}].highlights[${bulletIndex}]`, highlight);
+  }
+  if (selected.has("projects")) {
+    resume.projects.forEach((project, index) => {
+      add(`projects[${index}].description`, project.description);
+      project.highlights.forEach((highlight, bulletIndex) => {
+        add(`projects[${index}].highlights[${bulletIndex}]`, highlight);
+      });
     });
-  });
+  }
   return targets;
 }
 
@@ -151,6 +166,7 @@ export function normalizeResume(input) {
   const strategy = plainObject(input?.strategy) ? input.strategy : {};
   const renderer = plainObject(input?.renderer) ? input.renderer : {};
   const emphasis = normalizeEmphasis(input?.emphasis);
+  const emphasisPolicy = normalizeEmphasisPolicy(input?.emphasisPolicy);
   const rawAwards = arrayOrEmpty(input?.awards);
   const legacySummaryIndex = rawAwards.findIndex((award) => (
     text(award?.summary)
@@ -183,6 +199,7 @@ export function normalizeResume(input) {
       ? [...input.sections]
       : [...DEFAULT_SECTIONS],
     emphasis,
+    emphasisPolicy,
     basics: {
       name: text(basics.name),
       label: text(basics.label) || text(basics.headline),
@@ -258,7 +275,7 @@ export function validateResume(input) {
   if (input.sections !== undefined && !Array.isArray(input.sections)) {
     error("sections", "Expected an array.");
   }
-  for (const field of ["basics", "headings", "strategy", "renderer", "emphasis"]) {
+  for (const field of ["basics", "headings", "strategy", "renderer", "emphasis", "emphasisPolicy"]) {
     if (
       input[field] !== undefined
       && (!input[field] || typeof input[field] !== "object" || Array.isArray(input[field]))
@@ -274,6 +291,27 @@ export function validateResume(input) {
     }
     if (input.renderer.bodyFontSize !== undefined && typeof input.renderer.bodyFontSize !== "number") {
       error("renderer.bodyFontSize", "Expected a number.");
+    }
+  }
+  if (plainObject(input.emphasisPolicy)) {
+    for (const key of Object.keys(input.emphasisPolicy)) {
+      if (!["maxPhrasesPerField", "requireAllBullets"].includes(key)) {
+        error(`emphasisPolicy.${key}`, "Unknown emphasis-policy field.");
+      }
+    }
+    if (
+      input.emphasisPolicy.maxPhrasesPerField !== undefined
+      && input.emphasisPolicy.maxPhrasesPerField !== null
+      && (!Number.isInteger(input.emphasisPolicy.maxPhrasesPerField)
+        || input.emphasisPolicy.maxPhrasesPerField < 1)
+    ) {
+      error("emphasisPolicy.maxPhrasesPerField", "Use a positive integer or null.");
+    }
+    if (
+      input.emphasisPolicy.requireAllBullets !== undefined
+      && typeof input.emphasisPolicy.requireAllBullets !== "boolean"
+    ) {
+      error("emphasisPolicy.requireAllBullets", "Expected true or false.");
     }
   }
 
@@ -319,7 +357,16 @@ export function validateResume(input) {
   }
 
   const targets = emphasisTargets(resume);
-  if (plainObject(input.emphasis)) {
+  const hasEmphasis = plainObject(input.emphasis) && Object.keys(input.emphasis).length > 0;
+  const hasEmphasisPolicy = resume.emphasisPolicy.maxPhrasesPerField !== null
+    || resume.emphasisPolicy.requireAllBullets;
+  if ((hasEmphasis || hasEmphasisPolicy) && resume.renderer.kind === "resumake") {
+    error(
+      hasEmphasis ? "emphasis" : "emphasisPolicy",
+      "Inline emphasis requires renderer.kind ats; original Resumake templates do not support it.",
+    );
+  }
+  if (hasEmphasis) {
     for (const [pathName, rawPhrases] of Object.entries(input.emphasis)) {
       const field = `emphasis.${pathName}`;
       if (!Array.isArray(rawPhrases)) {
@@ -331,19 +378,29 @@ export function validateResume(input) {
         error(field, "Unknown or empty emphasis path.");
         continue;
       }
-      const phrases = rawPhrases.map(text).filter(Boolean);
-      if (!phrases.length || phrases.length > 3) {
-        error(field, "Use one to three non-empty emphasis phrases.");
+      if (!rawPhrases.length) {
+        error(field, "Use at least one non-empty emphasis phrase.");
+      }
+      if (
+        resume.emphasisPolicy.maxPhrasesPerField !== null
+        && rawPhrases.length > resume.emphasisPolicy.maxPhrasesPerField
+      ) {
+        error(field, `Use no more than ${resume.emphasisPolicy.maxPhrasesPerField} emphasis phrase(s) for this field.`);
       }
       const seen = new Set();
       const spans = [];
-      phrases.forEach((phrase, index) => {
+      rawPhrases.forEach((rawPhrase, index) => {
         const phraseField = `${field}[${index}]`;
+        if (typeof rawPhrase !== "string") {
+          error(phraseField, "Expected a string containing an exact phrase.");
+          return;
+        }
+        const phrase = text(rawPhrase);
         if (!phrase) {
           error(phraseField, "Emphasis phrase must be non-empty.");
           return;
         }
-        if (phrase !== rawPhrases[index]) {
+        if (phrase !== rawPhrase) {
           error(phraseField, "Do not use leading or trailing whitespace in an emphasis phrase.");
         }
         if (seen.has(phrase)) error(phraseField, "Duplicate emphasis phrase.");
@@ -370,18 +427,20 @@ export function validateResume(input) {
         }
       }
     }
-
+  }
+  if (resume.emphasisPolicy.requireAllBullets) {
+    const selected = new Set(resume.sections);
     const requiredBulletPaths = [
-      ...resume.work.flatMap((job, index) => (
+      ...(selected.has("work") ? resume.work.flatMap((job, index) => (
         job.highlights.map((_, bulletIndex) => `work[${index}].highlights[${bulletIndex}]`)
-      )),
-      ...resume.projects.flatMap((project, index) => (
+      )) : []),
+      ...(selected.has("projects") ? resume.projects.flatMap((project, index) => (
         project.highlights.map((_, bulletIndex) => `projects[${index}].highlights[${bulletIndex}]`)
-      )),
+      )) : []),
     ];
     requiredBulletPaths.forEach((pathName) => {
       if (!resume.emphasis[pathName]?.length) {
-        error(`emphasis.${pathName}`, "Scan-emphasis mode requires one to three meaningful phrases for every retained bullet.");
+        error(`emphasis.${pathName}`, "The configured emphasis policy requires at least one phrase for every rendered bullet.");
       }
     });
   }

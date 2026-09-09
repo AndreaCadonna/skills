@@ -34,6 +34,10 @@ The UTF-8 contract remains compatible with original Resumake inputs while adding
     "summary": ["distributed services"],
     "work[0].highlights[0]": ["Go", "three product teams"]
   },
+  "emphasisPolicy": {
+    "maxPhrasesPerField": 3,
+    "requireAllBullets": true
+  },
   "basics": {},
   "summary": "",
   "work": [],
@@ -72,11 +76,18 @@ Inputs without `renderer` remain valid and normalize to `renderer.kind: "resumak
 - `projects[n].description`;
 - `projects[n].highlights[m]`.
 
-Each value is a non-empty array of one to three exact, case-sensitive phrases contained in that field. Phrases may not overlap, repeat, or include leading or trailing whitespace. A phrase may equal an entire skill keyword, but may not equal an entire summary, description, or bullet. The validator rejects unknown paths and phrases that do not occur exactly once.
+Each value is a non-empty array of exact, case-sensitive phrases contained in that field. Phrases may not overlap, repeat, or include leading or trailing whitespace. A phrase may equal an entire skill keyword, but may not equal an entire summary, description, or bullet. The validator rejects non-string phrases, unknown or non-rendered paths, and phrases that do not occur exactly once.
 
-Keep the source text plain. Do not insert Markdown or LaTeX markup into resume strings. The ATS renderer escapes all source text and applies `\\textbf{}` only to validated emphasis spans. Original Resumake templates ignore the emphasis map and require an explicit warning when scan emphasis was requested.
+Keep the source text plain. Do not insert Markdown or LaTeX markup into resume strings. The ATS renderer escapes all source text and applies `\\textbf{}` only to validated emphasis spans.
 
-When scan emphasis is a user requirement, give every retained work and project bullet at least one meaningful emphasis span. Bold target-relevant technologies, engineering objects, controls, metrics, scope, and outcomes rather than generic verbs or status labels.
+`emphasisPolicy` optionally applies a local mechanical policy without changing the emphasis-map format:
+
+- `maxPhrasesPerField` is a positive integer or `null`. The default is `null`, which leaves phrase count to the calling workflow.
+- `requireAllBullets` is a boolean. The default is `false`. When true, every rendered work and project bullet requires an emphasis entry.
+
+Local workflows may set `maxPhrasesPerField` to `3` and `requireAllBullets` to `true` when that scan style is required. The reusable renderer otherwise permits selective emphasis. Bold target-relevant technologies, engineering objects, controls, metrics, scope, and outcomes rather than generic verbs or status labels.
+
+An absent or empty `emphasis` map produces no inline emphasis. Inputs remain valid after normalization because the default empty map does not activate a policy. Original Resumake templates reject a non-empty emphasis map or active emphasis policy instead of silently dropping the requested formatting.
 
 ## Fields
 

@@ -9,6 +9,26 @@ import { normalizeResume, readResume } from "./validate_resume.mjs";
 const PRIORITIES = new Set(["required", "preferred"]);
 const EVIDENCE_CLASSES = new Set(["direct", "transferable", "interest", "gap"]);
 const TREATMENTS = new Set(["claim", "demonstrate", "omit", "disclose"]);
+const AUDIT_MODES = new Set(["legacy", "strict"]);
+const CONFIDENCE_LEVELS = new Set(["high", "medium", "low"]);
+const DISCLOSURE_LEVELS = new Map([
+  ["public", "safe"],
+  ["public-safe", "safe"],
+  ["generalized", "review"],
+  ["generalize-before-use", "review"],
+  ["confidential", "unsafe"],
+  ["private", "unsafe"],
+  ["ask", "unverified"],
+  ["unverified", "unverified"],
+]);
+const PROFICIENCY_CLASSES = new Set([
+  "core-current",
+  "working-familiarity",
+  "previous-professional",
+  "project-only",
+  "experimental",
+]);
+const EVIDENCE_CONTEXTS = new Set(["professional", "project", "education", "mixed"]);
 const CONTENT_FIELDS = Object.freeze([
   "goalProblem",
   "engineeringObject",
@@ -38,6 +58,115 @@ function strings(value) {
 
 function plainObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
+}
+
+export function indexMarkdownSources(sourceDocuments) {
+  const errors = [];
+  const occurrences = new Map();
+  const documents = Array.isArray(sourceDocuments) ? sourceDocuments : [];
+  if (!Array.isArray(sourceDocuments) || !sourceDocuments.length) {
+    errors.push({ field: "sources", message: "Strict audit requires at least one explicitly supplied Markdown source." });
+  }
+
+  documents.forEach((document, documentIndex) => {
+    const base = `sources[${documentIndex}]`;
+    if (!plainObject(document)) {
+      errors.push({ field: base, message: "Expected a source document object." });
+      return;
+    }
+    const name = text(document.name) || `source-${documentIndex + 1}`;
+    if (typeof document.content !== "string") {
+      errors.push({ field: `${base}.content`, message: "Expected Markdown source text." });
+      return;
+    }
+    let validMarkers = 0;
+    let fence = null;
+    document.content.split(/\r?\n/).forEach((line, lineIndex) => {
+      const marker = line.trim();
+      if (fence) {
+        const closingFence = marker.match(/^(`{3,}|~{3,})\s*$/);
+        if (
+          closingFence
+          && closingFence[1][0] === fence.character
+          && closingFence[1].length >= fence.length
+        ) {
+          fence = null;
+        }
+        return;
+      }
+      const openingFence = marker.match(/^(`{3,}|~{3,})(?:\s*.*)?$/);
+      if (openingFence) {
+        fence = { character: openingFence[1][0], length: openingFence[1].length };
+        return;
+      }
+      if (!/^<!--\s*source-id\s*:/.test(marker)) return;
+      const match = marker.match(/^<!-- source-id: ([a-z0-9]+(?:-[a-z0-9]+)*) -->$/);
+      if (!match) {
+        errors.push({
+          field: `${base}.content:${lineIndex + 1}`,
+          message: "Malformed source marker. Use <!-- source-id: lowercase-kebab-case --> on its own line.",
+        });
+        return;
+      }
+      validMarkers += 1;
+      const sourceId = match[1];
+      const locations = occurrences.get(sourceId) || [];
+      locations.push(`${name}:${lineIndex + 1}`);
+      occurrences.set(sourceId, locations);
+    });
+    if (!validMarkers) {
+      errors.push({ field: `${base}.content`, message: "Source contains no valid canonical source markers." });
+    }
+  });
+
+  occurrences.forEach((locations, sourceId) => {
+    if (locations.length > 1) {
+      errors.push({
+        field: "sources",
+        message: `Duplicate source ID ${sourceId}: ${locations.join(", ")}`,
+      });
+    }
+  });
+  return {
+    sourceIds: new Set(occurrences.keys()),
+    errors,
+    documentCount: documents.length,
+  };
+}
+
+function validateReferencedSourceIds({ auditInput, sourceIds, error }) {
+  const check = (values, field) => {
+    if (!Array.isArray(values)) return;
+    values.forEach((rawSourceId, index) => {
+      const sourceId = text(rawSourceId);
+      if (!sourceId) {
+        error(`${field}[${index}]`, "Expected a non-empty canonical source ID string.");
+        return;
+      }
+      if (!sourceIds.has(sourceId)) error(`${field}[${index}]`, `Unknown canonical source ID: ${sourceId}`);
+    });
+  };
+  (Array.isArray(auditInput.requirements) ? auditInput.requirements : []).forEach((row, index) => {
+    check(row?.sourceIds, `requirements[${index}].sourceIds`);
+  });
+  (Array.isArray(auditInput.claims) ? auditInput.claims : []).forEach((row, index) => {
+    check(row?.sourceIds, `claims[${index}].sourceIds`);
+  });
+  const evidenceUnits = Array.isArray(auditInput.contentAudit?.evidenceUnits)
+    ? auditInput.contentAudit.evidenceUnits
+    : [];
+  evidenceUnits.forEach((row, index) => {
+    check(row?.sourceIds, `contentAudit.evidenceUnits[${index}].sourceIds`);
+  });
+  const chronology = plainObject(auditInput.chronologyAudit) ? auditInput.chronologyAudit : {};
+  check(chronology.canonicalRoles, "chronologyAudit.canonicalRoles");
+  check(chronology.includedRoles, "chronologyAudit.includedRoles");
+  (Array.isArray(chronology.omittedRoles) ? chronology.omittedRoles : []).forEach((row, index) => {
+    const roleId = text(row?.roleId);
+    if (roleId && !sourceIds.has(roleId)) {
+      error(`chronologyAudit.omittedRoles[${index}].roleId`, `Unknown canonical source ID: ${roleId}`);
+    }
+  });
 }
 
 function validateOmission({ omission, field, error, knownHighlightPaths, rolePath, excludedResumePaths = new Set() }) {
@@ -70,13 +199,12 @@ function validateOmission({ omission, field, error, knownHighlightPaths, rolePat
   }
 }
 
-function validateContentAudit({ resume, auditInput, materialPaths, claimSources, error, warn }) {
+function validateContentAudit({ resume, auditInput, materialPaths, claimSources, error, warn, strict }) {
   const contentAudit = auditInput.contentAudit;
   if (contentAudit === undefined) {
-    warn(
-      "contentAudit",
-      "Add the semantic content-selection audit for new tailored drafts; legacy traceability-only maps remain valid.",
-    );
+    const message = "Current applications require the property contentAudit exactly; renamed properties are not accepted.";
+    if (strict) error("contentAudit", message);
+    else warn("contentAudit", `${message} Legacy inspection remains traceability-only.`);
     return;
   }
   if (!plainObject(contentAudit)) {
@@ -329,13 +457,12 @@ function validateContentAudit({ resume, auditInput, materialPaths, claimSources,
   }
 }
 
-function validateChronologyAudit({ resume, auditInput, error, warn }) {
+function validateChronologyAudit({ resume, auditInput, error, warn, strict }) {
   const chronology = auditInput.chronologyAudit;
   if (chronology === undefined) {
-    warn(
-      "chronologyAudit",
-      "Add the career-history reconciliation audit for new tailored drafts; legacy maps remain valid.",
-    );
+    const message = "Current applications require chronologyAudit for career-history reconciliation.";
+    if (strict) error("chronologyAudit", message);
+    else warn("chronologyAudit", `${message} Legacy inspection cannot certify chronology coverage.`);
     return;
   }
   if (!plainObject(chronology)) {
@@ -404,12 +531,12 @@ function validateChronologyAudit({ resume, auditInput, error, warn }) {
   }
 }
 
-export function materialResumePaths(resumeInput) {
+export function materialResumeEntries(resumeInput) {
   const resume = normalizeResume(resumeInput);
   const selected = new Set(resume.sections);
-  const paths = [];
+  const entries = [];
   const add = (pathName, value) => {
-    if (text(value)) paths.push(pathName);
+    if (text(value)) entries.push([pathName, value]);
   };
 
   for (const field of ["name", "label", "email", "phone", "website"]) {
@@ -444,20 +571,43 @@ export function materialResumePaths(resumeInput) {
   if (selected.has("awards")) resume.awards.forEach((award, index) => {
     for (const field of ["title", "date", "awarder", "summary"]) add(`awards[${index}].${field}`, award[field]);
   });
-  return paths;
+  return entries;
 }
 
-export function auditApplication(resumeInput, auditInput) {
+export function materialResumePaths(resumeInput) {
+  return materialResumeEntries(resumeInput).map(([resumePath]) => resumePath);
+}
+
+export function auditApplication(resumeInput, auditInput, options = {}) {
   const errors = [];
   const warnings = [];
   const error = (field, message) => errors.push({ field, message });
   const warn = (field, message) => warnings.push({ field, message });
 
   if (!auditInput || typeof auditInput !== "object" || Array.isArray(auditInput)) {
-    return { valid: false, errors: [{ field: "$", message: "Audit must be a JSON object." }], warnings };
+    return {
+      valid: false,
+      mode: text(options?.mode) || "legacy",
+      errors: [{ field: "$", message: "Audit must be a JSON object." }],
+      warnings,
+    };
+  }
+  const mode = text(options?.mode) || "legacy";
+  const strict = mode === "strict";
+  if (!AUDIT_MODES.has(mode)) error("auditMode", "Use strict or legacy audit mode.");
+  if (!strict) {
+    warn(
+      "auditMode",
+      "LEGACY INSPECTION: source IDs and current claim metadata were not verified. Do not use this mode for a new or regenerated application.",
+    );
+  } else {
+    const sourceCatalog = indexMarkdownSources(options.sourceDocuments);
+    sourceCatalog.errors.forEach((item) => errors.push(item));
+    validateReferencedSourceIds({ auditInput, sourceIds: sourceCatalog.sourceIds, error });
   }
   const resume = normalizeResume(resumeInput);
-  const materialPaths = new Set(materialResumePaths(resumeInput));
+  const materialEntries = new Map(materialResumeEntries(resumeInput));
+  const materialPaths = new Set(materialEntries.keys());
   const requirements = Array.isArray(auditInput.requirements) ? auditInput.requirements : [];
   const claims = Array.isArray(auditInput.claims) ? auditInput.claims : [];
   if (!Array.isArray(auditInput.requirements)) error("requirements", "Expected an array.");
@@ -510,6 +660,67 @@ export function auditApplication(resumeInput, auditInput) {
     coveredPaths.add(resumePath);
     if (resumePath && !materialPaths.has(resumePath)) error(`${base}.path`, `Unknown or empty resume path: ${resumePath}`);
     if (!sourceIds.length) error(`${base}.sourceIds`, "Every material claim requires at least one source ID.");
+    if (strict) {
+      if (typeof row?.value !== "string") {
+        error(`${base}.value`, "Strict audits bind each claim to its current resume string value.");
+      } else if (resumePath && materialEntries.has(resumePath) && row.value !== materialEntries.get(resumePath)) {
+        error(`${base}.value`, `Claim value is stale for ${resumePath}; update the sidecar after reordering or editing content.`);
+      }
+      const confidence = text(row?.confidence);
+      if (!CONFIDENCE_LEVELS.has(confidence)) {
+        error(`${base}.confidence`, "Use high, medium, or low.");
+      } else if (confidence === "low") {
+        error(`${base}.confidence`, "Low-confidence evidence requires confirmation before it becomes a public claim.");
+      }
+      const disclosure = text(row?.disclosure);
+      const disclosureTreatment = DISCLOSURE_LEVELS.get(disclosure);
+      if (!disclosureTreatment) {
+        error(
+          `${base}.disclosure`,
+          "Use public-safe, generalize-before-use, private, or unverified; documented legacy equivalents are also accepted.",
+        );
+      } else if (["unsafe", "unverified"].includes(disclosureTreatment)) {
+        error(`${base}.disclosure`, `${disclosure} evidence is not eligible for a public resume claim.`);
+      } else if (disclosureTreatment === "review" && row?.publicWordingReviewed !== true) {
+        error(
+          `${base}.publicWordingReviewed`,
+          "Generalized evidence requires true after the claim's public wording has been reviewed for safe disclosure.",
+        );
+      }
+
+      const skillMatch = resumePath.match(/^skills\[(\d+)\]\.keywords\[(\d+)\]$/);
+      if (skillMatch) {
+        const proficiencyClass = text(row?.proficiencyClass);
+        if (!PROFICIENCY_CLASSES.has(proficiencyClass)) {
+          error(
+            `${base}.proficiencyClass`,
+            `Use one of: ${[...PROFICIENCY_CLASSES].join(", ")}.`,
+          );
+        } else if (proficiencyClass === "experimental") {
+          error(`${base}.proficiencyClass`, "Experimental technologies do not belong in the primary skills section.");
+        }
+        if (!text(row?.recency)) error(`${base}.recency`, "Record when this selected skill was last used or whether use is current.");
+        if (!EVIDENCE_CONTEXTS.has(text(row?.evidenceContext))) {
+          error(`${base}.evidenceContext`, `Use one of: ${[...EVIDENCE_CONTEXTS].join(", ")}.`);
+        }
+        if (proficiencyClass && proficiencyClass !== "core-current" && proficiencyClass !== "experimental") {
+          const qualification = text(row?.qualification);
+          if (!qualification) {
+            error(`${base}.qualification`, "A selected non-core skill requires its visible proficiency qualifier.");
+          } else {
+            const skillIndex = Number(skillMatch[1]);
+            const skillName = text(resume.skills[skillIndex]?.name).toLowerCase();
+            const skillValue = text(materialEntries.get(resumePath)).toLowerCase();
+            if (!skillName.includes(qualification.toLowerCase()) && !skillValue.includes(qualification.toLowerCase())) {
+              error(
+                `${base}.qualification`,
+                "The proficiency qualifier must appear in the rendered skill category or keyword.",
+              );
+            }
+          }
+        }
+      }
+    }
   });
 
   const claimSources = new Map(claims.map((row) => [
@@ -535,10 +746,10 @@ export function auditApplication(resumeInput, auditInput) {
     error("claims", `Missing source coverage for ${missingPaths.length} material path(s): ${missingPaths.join(", ")}`);
   }
 
-  validateContentAudit({ resume, auditInput, materialPaths, claimSources, error, warn });
-  validateChronologyAudit({ resume, auditInput, error, warn });
+  validateContentAudit({ resume, auditInput, materialPaths, claimSources, error, warn, strict });
+  validateChronologyAudit({ resume, auditInput, error, warn, strict });
 
-  return { valid: errors.length === 0, errors, warnings };
+  return { valid: errors.length === 0, mode, errors, warnings };
 }
 
 async function readJson(filePath) {
@@ -550,18 +761,61 @@ async function readJson(filePath) {
   }
 }
 
-async function main() {
-  const [resumePath, auditPath] = process.argv.slice(2);
-  if (!resumePath || !auditPath || process.argv.includes("--help")) {
-    console.log("Usage: node audit_application.mjs <resume.json> <application-audit.json>");
-    process.exitCode = resumePath && auditPath ? 0 : 2;
-    return;
+export async function auditApplicationWithSources(resumeInput, auditInput, sourcePaths) {
+  if (!Array.isArray(sourcePaths) || !sourcePaths.length) {
+    return auditApplication(resumeInput, auditInput, { mode: "strict", sourceDocuments: [] });
   }
+  const sourceDocuments = await Promise.all(sourcePaths.map(async (sourcePath) => {
+    const resolved = path.resolve(sourcePath);
+    return { name: resolved, content: await fs.readFile(resolved, "utf8") };
+  }));
+  return auditApplication(resumeInput, auditInput, { mode: "strict", sourceDocuments });
+}
+
+function parseCliArguments(args) {
+  const positionals = [];
+  const sourcePaths = [];
+  let legacy = false;
+  let help = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--source") {
+      const sourcePath = args[index + 1];
+      if (!sourcePath || sourcePath.startsWith("--")) throw new Error("--source requires a Markdown file path.");
+      sourcePaths.push(sourcePath);
+      index += 1;
+    } else if (argument === "--legacy") {
+      legacy = true;
+    } else if (argument === "--help") {
+      help = true;
+    } else if (argument.startsWith("--")) {
+      throw new Error(`Unknown option: ${argument}`);
+    } else {
+      positionals.push(argument);
+    }
+  }
+  if (legacy && sourcePaths.length) throw new Error("Choose strict --source input or --legacy inspection, not both.");
+  return { positionals, sourcePaths, legacy, help };
+}
+
+async function main() {
   try {
-    const report = auditApplication(
-      await readResume(path.resolve(resumePath)),
-      await readJson(path.resolve(auditPath)),
-    );
+    const { positionals, sourcePaths, legacy, help } = parseCliArguments(process.argv.slice(2));
+    const [resumePath, auditPath] = positionals;
+    if (help || !resumePath || !auditPath || positionals.length !== 2 || (!legacy && !sourcePaths.length)) {
+      console.log(
+        "Usage: node audit_application.mjs <resume.json> <application-audit.json> "
+        + "--source <candidate.md> [--source <additional.md> ...]\n"
+        + "Legacy inspection only: node audit_application.mjs <resume.json> <application-audit.json> --legacy",
+      );
+      process.exitCode = help ? 0 : 2;
+      return;
+    }
+    const resume = await readResume(path.resolve(resumePath));
+    const audit = await readJson(path.resolve(auditPath));
+    const report = legacy
+      ? auditApplication(resume, audit, { mode: "legacy" })
+      : await auditApplicationWithSources(resume, audit, sourcePaths);
     console.log(JSON.stringify(report, null, 2));
     process.exitCode = report.valid ? 0 : 1;
   } catch (cause) {
